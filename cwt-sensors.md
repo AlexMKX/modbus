@@ -161,3 +161,20 @@ Response:
     precision: 2
     scan_interval: 10
 ```
+
+## CLI example
+
+[pymodbus.console](https://pymodbus.readthedocs.io/en/latest/source/library/REPL.html)
+
+Read temp
+``` 
+ >  client.read_holding_registers address=1 count=1 slave=2 unit=2
+ 
+  {
+    "registers": [
+        306
+    ]
+}
+```
+
+Temp is 30.6
