@@ -1,3 +1,22 @@
+<!-- TOC -->
+  * [Specification](#specification)
+  * [Images](#images)
+  * [Cable](#cable)
+* [Defaults](#defaults)
+* [Registers](#registers)
+  * [Status](#status)
+  * [Parameters](#parameters)
+  * [Operations](#operations)
+    * [Temp read](#temp-read)
+    * [Slave Id](#slave-id)
+    * [Baud rate](#baud-rate)
+    * [Find slave ID](#find-slave-id)
+  * [Home Assistant integration](#home-assistant-integration)
+    * [CWT-T02S](#cwt-t02s)
+<!-- TOC -->
+
+## Specification
+
 * Мощность: DC5V ~ DC24V
 * Диапазон измерения температуры: -30 ℃ ~ 80 ℃
 * Диапазон измерения влажности: 0 ~ 100% RH
@@ -8,11 +27,11 @@
 * Расстояние связи RS485: до 800 м
 * По умолчанию длина кабеля: 0,5 м 
 
-# Images 
+## Images 
 ![](cwt-sensors.png)
 ![](cwt-sensors-sizing.png)
 
-# Cable
+## Cable
 
 
 | Color          | Function         |
@@ -36,7 +55,7 @@
 | 0x0001   | 40002       | temperature | 2     | 0.1 C   | R      |
 
 
-# Parameters 
+## Parameters 
 
 Read function 0x30, Write function 0x60
 
@@ -47,8 +66,8 @@ Read function 0x30, Write function 0x60
 | 0x0050   | 42081       | Temp calibration     | 2     | 0.1 C                   | R/W    |
 | 0x0051   | 42082       | Humidity Calibration | 2     | 0.1 %rh                 | R/W    |
 
-# Operations
-## Temp read
+## Operations
+### Temp read
 
 Request:
  ```
@@ -72,7 +91,7 @@ Response:
 Температура: FF9F H = -97 => Температура =-9,7 ℃
 Влажность: 1E6 H = 486 => Влажность = 48.6%
 
-## Slave Id
+### Slave Id
 
 Request: 
 ```
@@ -90,7 +109,7 @@ Response:
  ID: 0x0002
  Error Check: 0x0886 
 ```
-## Baud rate
+### Baud rate
 
 Request: 
 ```
@@ -109,7 +128,7 @@ Response:
  Error Check: 0x5946 
 ```
 
-## Find slave ID
+### Find slave ID
 Request: 
 ```
  Address: 0xFF
@@ -128,8 +147,8 @@ Response:
  Error Check: 0x5050
 ```
 
-# Home Assistant integration
-## CWT-T02S
+## Home Assistant integration
+### CWT-T02S
 ```
 
   - name: "hvac_zone_1_temp"
