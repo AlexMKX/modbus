@@ -1,3 +1,5 @@
+# JUF4802 RS 485 PWM Controller
+
 ![image](https://github.com/AlexMKX/modbus/assets/25821291/2e6b856d-71ac-47a4-b2e5-afd3b6eab85e)
 
 | Address       | Function                                                                           | Description | Functions |
