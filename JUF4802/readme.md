@@ -1,3 +1,5 @@
+![image](https://github.com/AlexMKX/modbus/assets/25821291/53e8c3e8-0dcb-48ef-a030-f92f24bd7646)
+
 | Address       | Function                                                                           | Description | Functions |
 |---------------|------------------------------------------------------------------------------------|-------------|-----------|
 | 0x01          | Fan status in first 4 bits 0x1 for fan1, <br/>0x2 for fan2 0x4 for fan 4 and so on | read/write  | 0x3/0x2   |
