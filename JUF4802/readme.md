@@ -1,4 +1,4 @@
-![image](https://github.com/AlexMKX/modbus/assets/25821291/75c2aa33-0718-4219-93da-cd03dfc8e6c0)
+![image](https://github.com/AlexMKX/modbus/assets/25821291/2e6b856d-71ac-47a4-b2e5-afd3b6eab85e)
 
 | Address       | Function                                                                           | Description | Functions |
 |---------------|------------------------------------------------------------------------------------|-------------|-----------|
