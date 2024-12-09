@@ -1,0 +1,91 @@
+defaults:
+    modbus_master: modbus_master
+    name: ${device_id}
+    update_interval_seconds: 300
+modbus_controller:
+  - id: ${device_id}
+    address: ${slave_id}   ## address of the Modbus slave device on the bus
+    modbus_id: ${modbus_master}
+    setup_priority: -10
+    update_interval: ${update_interval_seconds}s
+
+globals:
+  - id: ${device_id}_last_updated
+    type: int
+
+time:
+  - platform: host
+    id: ${device_id}_sntp_time
+
+binary_sensor:
+  - id: ${device_id}_online
+    platform: template
+    lambda: |-
+      return (id(${device_id}_sntp_time).now().timestamp-id (${device_id}_last_updated))< 2*int(${update_interval_seconds});
+
+sensor:
+  - platform: modbus_controller
+    modbus_controller_id: ${device_id}
+    id: ${device_id}_pressure
+    name: "${name} pressure"
+    address: 0x4
+    register_type: holding
+    value_type: U_WORD
+    accuracy_decimals: 2
+    device_class: pressure
+    unit_of_measurement: "bar"
+    # icon: mdi:water   
+    state_class: measurement
+    filters:
+      - lambda: |-
+          if (x > 65500) return 0;
+          return x*0.1;
+    on_value: 
+      then:
+        - globals.set:
+            id: ${device_id}_last_updated
+            value: !lambda "return id(${device_id}_sntp_time).now().timestamp;"
+        
+
+
+
+# number:
+#   - platform: modbus_controller
+#     modbus_controller_id: ${device_id}    
+#     id: ${device_id}_modbus_address    
+#     name: ${device_id} ModBus address
+#     register_type: holding
+#     address: 0x0000
+#     entity_category: config
+#     icon: mdi:numeric
+#     skip_updates: 200
+#     mode: box
+#     min_value: 1
+#     max_value: 255
+#     write_lambda: "return {};" # disable updates, remove if needed - not tested
+#   - platform: modbus_controller
+#     modbus_controller_id: ${device_id}    
+#     id: ${device_id}_pressure_unit    
+#     value_type: U_WORD
+#     name: ${device_id} pressure unit
+#     register_type: holding
+#     address: 0x0002
+#     entity_category: config
+#     icon: mdi:numeric
+# #    skip_updates: 200
+#     mode: box
+#     min_value: 1
+#     max_value: 10    
+#   - platform: modbus_controller
+#     modbus_controller_id: ${device_id}    
+#     id: ${device_id}_zerooffset
+#     name: ${device_id} zerooffset
+#     value_type: U_WORD
+#     register_type: holding
+#     address: 0x000c
+#     entity_category: config
+#     icon: mdi:numeric
+#     # skip_updates: 200
+#     mode: box
+#     min_value: 0
+#     max_value: 32768
