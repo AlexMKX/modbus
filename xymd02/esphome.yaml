@@ -1,0 +1,40 @@
+defaults:
+    modbus_master: modbus_master
+    name: ${device_id}
+    update_interval: 60s
+modbus_controller:
+  - id: ${device_id}
+    address: ${slave_id}   ## address of the Modbus slave device on the bus
+    modbus_id: ${modbus_master}
+    setup_priority: -10
+    update_interval: ${update_interval}
+
+sensor:
+  - platform: modbus_controller
+    modbus_controller_id: ${device_id}
+    name: "${name} Temperature"
+    id: ${device_id}_temperature
+   
+    register_type: read
+    address: 0x0001
+    value_type: S_WORD
+    unit_of_measurement: "°C"
+    accuracy_decimals: 1
+    filters:
+      - multiply: 0.1
+      - quantile:
+          window_size: 7
+          send_every: 1
+          send_first_at: 1
+          quantile: 0.99
+  - platform: modbus_controller
+    modbus_controller_id: ${device_id}
+    name: "${name} Humidity"
+    register_type: read
+    id: ${device_id}_humidity
+    address: 0x0002
+    value_type: S_WORD
+    unit_of_measurement: "%"
+    accuracy_decimals: 1
+    filters:
+      - multiply: 0.1
