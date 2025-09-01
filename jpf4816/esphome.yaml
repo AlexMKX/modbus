@@ -1,0 +1,333 @@
+defaults:
+    modbus_master: modbus_master
+    name: ${device_id}
+    update_interval: 30s
+    command_throttle: 250ms
+
+modbus_controller:
+  - id: ${device_id}_modbus
+    address: ${slave_id}   ## address of the Modbus slave device on the bus
+    modbus_id: ${modbus_master}
+    setup_priority: -10
+    update_interval: ${update_interval}
+    command_throttle: ${command_throttle}
+
+sensor:
+  - platform: modbus_controller
+    modbus_controller_id: ${device_id}_modbus
+    name: "${name} Temperature"
+    register_type: holding
+    address: 0  # h0 - Current temperature (value has +40 offset)
+    value_type: U_WORD
+    unit_of_measurement: "°C"
+    force_new_range: true
+    filters:
+      - lambda: return x - 40;
+
+  - platform: modbus_controller
+    modbus_controller_id: ${device_id}_modbus
+    name: "${name} Status"
+    register_type: holding
+    address: 1  # h1 - Fan status
+    value_type: U_WORD
+    force_new_range: true
+
+  # Дополнительные sensor'ы для мониторинга
+  - platform: modbus_controller
+    modbus_controller_id: ${device_id}_modbus
+    name: "${name} Fan Fault Codes"
+    register_type: holding
+    address: 14  # 0x000E - Fan fault codes (read only)
+    value_type: U_WORD
+    force_new_range: true
+
+  - platform: modbus_controller
+    modbus_controller_id: ${device_id}_modbus
+    name: "${name} Start Temperature (Setpoint)"
+    register_type: holding
+    address: 12  # 0x000C - Fan start temperature (value has +40 offset)
+    value_type: U_WORD
+    unit_of_measurement: "°C"
+    force_new_range: true
+    filters:
+      - lambda: return x - 40;
+
+  - platform: modbus_controller
+    modbus_controller_id: ${device_id}_modbus
+    name: "${name} Full Speed Temperature (Setpoint)"
+    register_type: holding
+    address: 13  # 0x000D - Fan full speed temperature (value has +40 offset)
+    value_type: U_WORD
+    unit_of_measurement: "°C"
+    force_new_range: true
+    filters:
+      - lambda: return x - 40;
+
+  - platform: modbus_controller
+    modbus_controller_id: ${device_id}_modbus
+    name: "${name} Fan 1 RPM"
+    register_type: holding
+    address: 7
+    value_type: U_WORD
+    force_new_range: true
+    unit_of_measurement: "rpm"
+    filters:    
+      - quantile:
+          window_size: 7
+          send_every: 1
+          send_first_at: 1
+          quantile: 0.99
+
+  - platform: modbus_controller
+    modbus_controller_id: ${device_id}_modbus
+    name: "${name} Fan 2 RPM"
+    register_type: holding
+    address: 8  # h8 -> holding register 8 = address 7
+    value_type: U_WORD
+    force_new_range: true
+    unit_of_measurement: "rpm"
+    filters:    
+      - quantile:
+          window_size: 7
+          send_every: 1
+          send_first_at: 1
+          quantile: 0.99
+
+  - platform: modbus_controller
+    modbus_controller_id: ${device_id}_modbus
+    name: "${name} Fan 3 RPM"
+    register_type: holding
+    address: 9  # h8 -> holding register 8 = address 7
+    value_type: U_WORD
+    force_new_range: true
+    unit_of_measurement: "rpm"
+    filters:    
+      - quantile:
+          window_size: 7
+          send_every: 1
+          send_first_at: 1
+          quantile: 0.99
+  - platform: modbus_controller
+    modbus_controller_id: ${device_id}_modbus
+    name: "${name} Fan 4 RPM"
+    register_type: holding
+    address: 10  # h8 -> holding register 8 = address 7
+    value_type: U_WORD
+    force_new_range: true    
+    unit_of_measurement: "rpm"    
+    filters:    
+      - quantile:
+          window_size: 7
+          send_every: 1
+          send_first_at: 1
+          quantile: 0.99
+number:
+#   # Общий регулятор скорости для всех вентиляторов
+
+  - platform: modbus_controller
+    modbus_controller_id: ${device_id}_modbus
+    name: "${name} All Fans Speed Percentage"
+    id: ${device_id}_speed_percentage
+    register_type: holding
+    address: 3  # h3 -> 0x0003 - 1 (holding registers start from 0)
+    value_type: U_WORD
+    min_value: 0
+    max_value: 100
+    step: 1
+    force_new_range: true
+    unit_of_measurement: "%"
+  - platform: modbus_controller
+    modbus_controller_id: ${device_id}_modbus
+    id: ${device_id}_exit_serial_ctrl_raw
+    internal: true
+    name: "${name} Exit Serial Control Raw"
+    register_type: holding
+    address: 3
+    value_type: U_WORD
+    min_value: 0
+    max_value: 65535
+    step: 1
+    force_new_range: true
+
+  - platform: modbus_controller
+    modbus_controller_id: ${device_id}_modbus
+    name: "${name} Number of Fans"
+    register_type: holding
+    address: 6  # 0x0006 - number of fans (1..4)
+    value_type: U_WORD
+    min_value: 1
+    max_value: 4
+    step: 1
+    force_new_range: true
+
+  - platform: modbus_controller
+    modbus_controller_id: ${device_id}_modbus
+    name: "${name} Governor Mode"
+    register_type: holding
+    address: 5  # h5 -> holding register 5 = address 4
+    value_type: U_WORD
+    min_value: 0
+    max_value: 1
+    step: 1
+    force_new_range: true
+#     # 0x0001 = maximum speed mode, 0x0000 = off mode
+
+  - platform: modbus_controller
+    modbus_controller_id: ${device_id}_modbus
+    id: ${device_id}_pwm_freq_raw
+    internal: true
+    name: "${name} PWM Frequency Raw"
+    register_type: holding
+    address: 11  # h11 - PWM frequency selection 
+    value_type: U_WORD
+    min_value: 0
+    max_value: 5
+    step: 1
+    force_new_range: true
+    # 0=500Hz, 1=1KHz, 2=2KHz, 3=5KHz, 4=10KHz, 5=25KHz
+
+  # Дополнительные регистры управления
+  - platform: modbus_controller
+    modbus_controller_id: ${device_id}_modbus
+    name: "${name} Modbus Address"
+    register_type: holding
+    address: 2  # 0x0002 - MODBUS-485 Address (1..254)
+    value_type: U_WORD
+    min_value: 1
+    max_value: 254
+    step: 1
+    force_new_range: true
+    mode: box
+    entity_category: config
+
+  # Внутренний регистр для перезапуска (записать 0x00AA в 0x0020)
+  - platform: modbus_controller
+    modbus_controller_id: ${device_id}_modbus
+    id: ${device_id}_restart_cmd_raw
+    internal: true
+    name: "${name} Restart Command Raw"
+    register_type: holding
+    address: 32
+    value_type: U_WORD
+    min_value: 0
+    max_value: 65535
+    step: 1
+    force_new_range: true
+
+binary_sensor:
+  # Битовые статусы работы вентиляторов по регистру 0x0001 (1=RUN, 0=STOP)
+  - platform: modbus_controller
+    modbus_controller_id: ${device_id}_modbus
+    name: "${name} Fan 1 Running"
+    register_type: holding
+    address: 1
+    bitmask: 0x0001
+    force_new_range: true
+  - platform: modbus_controller
+    modbus_controller_id: ${device_id}_modbus
+    name: "${name} Fan 2 Running"
+    register_type: holding
+    address: 1
+    bitmask: 0x0002
+    force_new_range: true
+  - platform: modbus_controller
+    modbus_controller_id: ${device_id}_modbus
+    name: "${name} Fan 3 Running"
+    register_type: holding
+    address: 1
+    bitmask: 0x0004
+    force_new_range: true
+  - platform: modbus_controller
+    modbus_controller_id: ${device_id}_modbus
+    name: "${name} Fan 4 Running"
+    register_type: holding
+    address: 1
+    bitmask: 0x0008
+    force_new_range: true
+
+  # Битовые статусы исправности по 0x000E (1=OK, 0=FAULT)
+  - platform: modbus_controller
+    modbus_controller_id: ${device_id}_modbus
+    name: "${name} Fan 1 OK"
+    register_type: holding
+    address: 14
+    bitmask: 0x0001
+    force_new_range: true
+  - platform: modbus_controller
+    modbus_controller_id: ${device_id}_modbus
+    name: "${name} Fan 2 OK"
+    register_type: holding
+    address: 14
+    bitmask: 0x0002
+    force_new_range: true
+  - platform: modbus_controller
+    modbus_controller_id: ${device_id}_modbus
+    name: "${name} Fan 3 OK"
+    register_type: holding
+    address: 14
+    bitmask: 0x0004
+    force_new_range: true
+  - platform: modbus_controller
+    modbus_controller_id: ${device_id}_modbus
+    name: "${name} Fan 4 OK"
+    register_type: holding
+    address: 14
+    bitmask: 0x0008
+    force_new_range: true
+
+select:
+  - platform: template
+    name: "${name} PWM Frequency"
+    entity_category: config
+    optimistic: false
+    options:
+      - "500Hz"
+      - "1kHz"
+      - "2kHz"
+      - "5kHz"
+      - "10kHz"
+      - "25kHz"
+    lambda: |-
+      const int v = (int) id(${device_id}_pwm_freq_raw).state;
+      switch (v) {
+        case 0: return std::string("500Hz");
+        case 1: return std::string("1kHz");
+        case 2: return std::string("2kHz");
+        case 3: return std::string("5kHz");
+        case 4: return std::string("10kHz");
+        case 5: return std::string("25kHz");
+        default: return std::string("25kHz");
+      }
+    set_action:
+      - lambda: |-
+          int val = 5;
+          if (x == "500Hz") val = 0;
+          else if (x == "1kHz") val = 1;
+          else if (x == "2kHz") val = 2;
+          else if (x == "5kHz") val = 3;
+          else if (x == "10kHz") val = 4;
+          else val = 5;
+          id(${device_id}_pwm_freq_raw).publish_state(val);
+          // применим запись в регистр
+          auto call = id(${device_id}_pwm_freq_raw).make_call();
+          call.set_value(val);
+          call.perform();
+
+button:
+  # Кнопка выхода из режима принудительного управления (записать 0xFFFF в 0x0003)
+  - platform: template
+    name: "${name} Exit Serial Control"
+    on_press:
+      - number.set:
+          id: ${device_id}_exit_serial_ctrl_raw
+          value: 65535
+
+  # Перезапуск устройства (записать 0x00AA в 0x0020)
+  - platform: template
+    name: "${name} Restart Device"
+    on_press:
+      - number.set:
+          id: ${device_id}_restart_cmd_raw
+          value: 170
+
+
