@@ -1,0 +1,11 @@
+defaults:
+    modbus_id: ${device_id}_modbus
+
+binary_sensor:
+  - platform: template
+    name: "${name} Online"
+    id: ${device_id}_online
+    device_class: connectivity
+    lambda: "return !id(${modbus_id}).get_module_offline();"
+    filters:
+      - delayed_off: 30s

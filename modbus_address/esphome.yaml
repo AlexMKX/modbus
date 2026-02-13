@@ -1,0 +1,37 @@
+defaults:
+    modbus_id: ${device_id}_modbus
+
+globals:
+  - id: ${device_id}_slave_id
+    type: int
+    restore_value: true
+    initial_value: "(${slave_id})"
+
+esphome:
+  on_boot:
+    priority: -5
+    then:
+      - lambda: |-
+          int addr = id(${device_id}_slave_id);
+          if (addr > 0 && addr <= 254) {
+            id(${modbus_id}).set_address(addr);
+            ESP_LOGI("modbus", "${device_id}: slave address set from NVS: %d", addr);
+          }
+
+number:
+  - platform: template
+    name: "${name} Slave Address"
+    id: ${device_id}_slave_addr_ui
+    min_value: 1
+    max_value: 254
+    step: 1
+    mode: box
+    entity_category: config
+    lambda: "return id(${device_id}_slave_id);"
+    set_action:
+      - globals.set:
+          id: ${device_id}_slave_id
+          value: !lambda "return (int)x;"
+      - lambda: |-
+          id(${modbus_id}).set_address((int)x);
+          ESP_LOGI("modbus", "${device_id}: slave address changed to: %d", (int)x);

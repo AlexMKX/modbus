@@ -2,12 +2,32 @@ defaults:
     modbus_master: modbus_master
     name: ${device_id}
     update_interval: 60s
+    command_throttle: 200ms
+
+packages:
+  online_sensor: !include
+    file: ../modbus_online/esphome.yaml
+    vars:
+      modbus_id: ${device_id}
+      device_id: ${device_id}
+      name: ${name}
+  modbus_address: !include
+    file: ../modbus_address/esphome.yaml
+    vars:
+      modbus_id: ${device_id}
+      device_id: ${device_id}
+      name: ${name}
+      slave_id: ${slave_id}
+
 modbus_controller:
   - id: ${device_id}
     address: ${slave_id}   ## address of the Modbus slave device on the bus
     modbus_id: ${modbus_master}
     setup_priority: -10
     update_interval: ${update_interval}
+    command_throttle: ${command_throttle}
+    offline_skip_updates: 5
+    max_cmd_retries: 2
 
 sensor:
   - platform: modbus_controller

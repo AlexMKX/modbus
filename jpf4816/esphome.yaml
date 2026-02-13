@@ -2,280 +2,360 @@ defaults:
     modbus_master: modbus_master
     name: ${device_id}
     update_interval: 30s
-    command_throttle: 250ms
+    command_throttle: 100ms
+
+packages:
+  online_sensor: !include
+    file: ../modbus_online/esphome.yaml
+    vars:
+      modbus_id: ${device_id}_modbus
+      device_id: ${device_id}
+      name: ${name}
+
+# JPF4816 Fan Speed Controller — full register map
+# Datasheet: 成都兢志成电子科技有限公司 (Chengdu Jingzhicheng)
+#
+# Reg    | Description                          | Access
+# -------|--------------------------------------|--------
+# 0x0000 | Temperature (+40 offset)             | R
+# 0x0001 | Fan status bitmask                   | R
+# 0x0002 | Modbus address (1–254)               | R/W
+# 0x0003 | Serial forced fan speed % (0–100, 0xFFFF=release) | R/W
+# 0x0004 | Combined start/full-speed temp (hi=start, lo=full) | R/W
+# 0x0005 | Governor mode (0=off, 1=min-speed)   | R/W
+# 0x0006 | Number of fans (0–4, 0=no fault detect) | R/W
+# 0x0007 | Fan 1 RPM                            | R
+# 0x0008 | Fan 2 RPM                            | R
+# 0x0009 | Fan 3 RPM                            | R
+# 0x000A | Fan 4 RPM                            | R
+# 0x000B | PWM frequency (0–5, default 5=25kHz) | R/W
+# 0x000C | Fan start temperature (+40 offset)   | R/W
+# 0x000D | Fan full-speed temperature (+40 offset) | R/W
+# 0x000E | Fan fault codes bitmask              | R
+# 0x0020 | Reset/restart (write 0x00AA)         | W
+
+globals:
+  - id: ${device_id}_slave_id
+    type: int
+    restore_value: true
+    initial_value: "(${slave_id})"
+
+esphome:
+  on_boot:
+    priority: -5
+    then:
+      - lambda: |-
+          int addr = id(${device_id}_slave_id);
+          if (addr > 0 && addr <= 254) {
+            id(${device_id}_modbus).set_address(addr);
+            ESP_LOGI("modbus", "${device_id}: slave address set from NVS: %d", addr);
+          }
 
 modbus_controller:
   - id: ${device_id}_modbus
-    address: ${slave_id}   ## address of the Modbus slave device on the bus
+    address: ${slave_id}
     modbus_id: ${modbus_master}
     setup_priority: -10
     update_interval: ${update_interval}
     command_throttle: ${command_throttle}
+    offline_skip_updates: 5
+    max_cmd_retries: 2
+
+# ── Sensors (read-only registers) ─────────────────────────────────────────────
 
 sensor:
+  # 0x0000 — Current temperature (read only, raw value has +40 offset)
   - platform: modbus_controller
     modbus_controller_id: ${device_id}_modbus
     name: "${name} Temperature"
     register_type: holding
-    address: 0  # h0 - Current temperature (value has +40 offset)
+    address: 0x0000
     value_type: U_WORD
     unit_of_measurement: "°C"
-    force_new_range: true
     filters:
       - lambda: return x - 40;
 
+  # 0x0001 — Fan status bitmask as raw value (read only)
   - platform: modbus_controller
     modbus_controller_id: ${device_id}_modbus
-    name: "${name} Status"
+    name: "${name} Fan Status"
     register_type: holding
-    address: 1  # h1 - Fan status
+    address: 0x0001
     value_type: U_WORD
-    force_new_range: true
 
-  # Дополнительные sensor'ы для мониторинга
+  # 0x0002 — Modbus address register (internal, keeps batch read continuous 0x0000–0x000E)
   - platform: modbus_controller
     modbus_controller_id: ${device_id}_modbus
-    name: "${name} Fan Fault Codes"
+    id: ${device_id}_device_addr_reg
+    internal: true
     register_type: holding
-    address: 14  # 0x000E - Fan fault codes (read only)
+    address: 0x0002
     value_type: U_WORD
-    force_new_range: true
 
+  # 0x0004 — Combined start/full-speed temperature (read only view)
+  # High byte = start temp, low byte = full-speed temp, both +40 offset
+  # Individual R/W control via 0x000C and 0x000D below
   - platform: modbus_controller
     modbus_controller_id: ${device_id}_modbus
-    name: "${name} Start Temperature (Setpoint)"
+    name: "${name} Start+Full Temp Combined Raw"
     register_type: holding
-    address: 12  # 0x000C - Fan start temperature (value has +40 offset)
+    address: 0x0004
     value_type: U_WORD
-    unit_of_measurement: "°C"
-    force_new_range: true
-    filters:
-      - lambda: return x - 40;
+    entity_category: diagnostic
 
-  - platform: modbus_controller
-    modbus_controller_id: ${device_id}_modbus
-    name: "${name} Full Speed Temperature (Setpoint)"
-    register_type: holding
-    address: 13  # 0x000D - Fan full speed temperature (value has +40 offset)
-    value_type: U_WORD
-    unit_of_measurement: "°C"
-    force_new_range: true
-    filters:
-      - lambda: return x - 40;
-
+  # 0x0007 — Fan 1 RPM (read only)
   - platform: modbus_controller
     modbus_controller_id: ${device_id}_modbus
     name: "${name} Fan 1 RPM"
     register_type: holding
-    address: 7
+    address: 0x0007
     value_type: U_WORD
-    force_new_range: true
     unit_of_measurement: "rpm"
-    filters:    
+    filters:
       - quantile:
           window_size: 7
           send_every: 1
           send_first_at: 1
           quantile: 0.99
 
+  # 0x0008 — Fan 2 RPM (read only)
   - platform: modbus_controller
     modbus_controller_id: ${device_id}_modbus
     name: "${name} Fan 2 RPM"
     register_type: holding
-    address: 8  # h8 -> holding register 8 = address 7
+    address: 0x0008
     value_type: U_WORD
-    force_new_range: true
     unit_of_measurement: "rpm"
-    filters:    
+    filters:
       - quantile:
           window_size: 7
           send_every: 1
           send_first_at: 1
           quantile: 0.99
 
+  # 0x0009 — Fan 3 RPM (read only)
   - platform: modbus_controller
     modbus_controller_id: ${device_id}_modbus
     name: "${name} Fan 3 RPM"
     register_type: holding
-    address: 9  # h8 -> holding register 8 = address 7
+    address: 0x0009
     value_type: U_WORD
-    force_new_range: true
     unit_of_measurement: "rpm"
-    filters:    
+    filters:
       - quantile:
           window_size: 7
           send_every: 1
           send_first_at: 1
           quantile: 0.99
+
+  # 0x000A — Fan 4 RPM (read only)
   - platform: modbus_controller
     modbus_controller_id: ${device_id}_modbus
     name: "${name} Fan 4 RPM"
     register_type: holding
-    address: 10  # h8 -> holding register 8 = address 7
+    address: 0x000A
     value_type: U_WORD
-    force_new_range: true    
-    unit_of_measurement: "rpm"    
-    filters:    
+    unit_of_measurement: "rpm"
+    filters:
       - quantile:
           window_size: 7
           send_every: 1
           send_first_at: 1
           quantile: 0.99
-number:
-#   # Общий регулятор скорости для всех вентиляторов
 
+  # 0x000E — Fan fault codes bitmask as raw value (read only)
+  - platform: modbus_controller
+    modbus_controller_id: ${device_id}_modbus
+    name: "${name} Fan Fault Codes"
+    register_type: holding
+    address: 0x000E
+    value_type: U_WORD
+
+# ── Numbers (read/write registers) ────────────────────────────────────────────
+
+number:
+  # Modbus address — writes to NVS (ESP32 side) AND register 0x0002 (JPF4816 device)
+  - platform: template
+    name: "${name} Modbus Address"
+    id: ${device_id}_slave_addr_ui
+    min_value: 1
+    max_value: 254
+    step: 1
+    mode: box
+    entity_category: config
+    lambda: "return id(${device_id}_slave_id);"
+    set_action:
+      - globals.set:
+          id: ${device_id}_slave_id
+          value: !lambda "return (int)x;"
+      - lambda: |-
+          int addr = (int)x;
+          // Write new address to JPF4816 register 0x0002 BEFORE changing ESP32 target
+          auto cmd = esphome::modbus_controller::ModbusCommandItem::create_write_single_command(
+            id(${device_id}_modbus), 0x0002, addr);
+          id(${device_id}_modbus)->queue_command(cmd);
+          // Update ESP32 modbus controller target address
+          id(${device_id}_modbus)->set_address(addr);
+          ESP_LOGI("modbus", "${device_id}: address changed to %d (NVS + device 0x0002)", addr);
+
+  # 0x0003 — Serial forced fan speed % (read/write, 0–100; write 0xFFFF to release)
   - platform: modbus_controller
     modbus_controller_id: ${device_id}_modbus
     name: "${name} All Fans Speed Percentage"
     id: ${device_id}_speed_percentage
     register_type: holding
-    address: 3  # h3 -> 0x0003 - 1 (holding registers start from 0)
+    address: 0x0003
     value_type: U_WORD
     min_value: 0
     max_value: 100
     step: 1
-    force_new_range: true
     unit_of_measurement: "%"
+
+
+  # 0x0005 — Governor mode (internal, used by select)
   - platform: modbus_controller
     modbus_controller_id: ${device_id}_modbus
-    id: ${device_id}_exit_serial_ctrl_raw
+    id: ${device_id}_governor_raw
     internal: true
-    name: "${name} Exit Serial Control Raw"
     register_type: holding
-    address: 3
-    value_type: U_WORD
-    min_value: 0
-    max_value: 65535
-    step: 1
-    force_new_range: true
-
-  - platform: modbus_controller
-    modbus_controller_id: ${device_id}_modbus
-    name: "${name} Number of Fans"
-    register_type: holding
-    address: 6  # 0x0006 - number of fans (1..4)
-    value_type: U_WORD
-    min_value: 1
-    max_value: 4
-    step: 1
-    force_new_range: true
-
-  - platform: modbus_controller
-    modbus_controller_id: ${device_id}_modbus
-    name: "${name} Governor Mode"
-    register_type: holding
-    address: 5  # h5 -> holding register 5 = address 4
+    address: 0x0005
     value_type: U_WORD
     min_value: 0
     max_value: 1
     step: 1
-    force_new_range: true
-#     # 0x0001 = maximum speed mode, 0x0000 = off mode
 
+  # 0x0006 — Number of fans (read/write, 0–4; 0=disable fault detection)
+  - platform: modbus_controller
+    modbus_controller_id: ${device_id}_modbus
+    name: "${name} Number of Fans"
+    register_type: holding
+    address: 0x0006
+    value_type: U_WORD
+    min_value: 0
+    max_value: 4
+    step: 1
+
+  # 0x000B — PWM output frequency selection (read/write, 0–5, default 5=25kHz)
+  # 0=500Hz, 1=1KHz, 2=2KHz, 3=5KHz, 4=10KHz, 5=25KHz
   - platform: modbus_controller
     modbus_controller_id: ${device_id}_modbus
     id: ${device_id}_pwm_freq_raw
     internal: true
     name: "${name} PWM Frequency Raw"
     register_type: holding
-    address: 11  # h11 - PWM frequency selection 
+    address: 0x000B
     value_type: U_WORD
     min_value: 0
     max_value: 5
     step: 1
-    force_new_range: true
-    # 0=500Hz, 1=1KHz, 2=2KHz, 3=5KHz, 4=10KHz, 5=25KHz
 
-  # Дополнительные регистры управления
+  # 0x000C — Fan start temperature (read/write, +40 offset)
+  # Raw range: 0x0014–0x00A0 (20–160), display: -20°C to 120°C
   - platform: modbus_controller
     modbus_controller_id: ${device_id}_modbus
-    name: "${name} Modbus Address"
+    name: "${name} Start Temperature"
     register_type: holding
-    address: 2  # 0x0002 - MODBUS-485 Address (1..254)
+    address: 0x000C
     value_type: U_WORD
-    min_value: 1
-    max_value: 254
+    unit_of_measurement: "°C"
+    min_value: -20
+    max_value: 120
     step: 1
-    force_new_range: true
-    mode: box
-    entity_category: config
+    lambda: "return x - 40;"
+    write_lambda: "return x + 40;"
 
-  # Внутренний регистр для перезапуска (записать 0x00AA в 0x0020)
+  # 0x000D — Fan full-speed temperature (read/write, +40 offset)
+  # Raw range: 0x0014–0x00A0 (20–160), display: -20°C to 120°C
   - platform: modbus_controller
     modbus_controller_id: ${device_id}_modbus
-    id: ${device_id}_restart_cmd_raw
-    internal: true
-    name: "${name} Restart Command Raw"
+    name: "${name} Full Speed Temperature"
     register_type: holding
-    address: 32
+    address: 0x000D
     value_type: U_WORD
-    min_value: 0
-    max_value: 65535
+    unit_of_measurement: "°C"
+    min_value: -20
+    max_value: 120
     step: 1
-    force_new_range: true
+    lambda: "return x - 40;"
+    write_lambda: "return x + 40;"
+
+
+# ── Binary sensors (bitmask read-only) ────────────────────────────────────────
 
 binary_sensor:
-  # Битовые статусы работы вентиляторов по регистру 0x0001 (1=RUN, 0=STOP)
+  # 0x0001 — Fan running status (1=running, 0=stopped)
   - platform: modbus_controller
     modbus_controller_id: ${device_id}_modbus
     name: "${name} Fan 1 Running"
     register_type: holding
-    address: 1
+    address: 0x0001
     bitmask: 0x0001
-    force_new_range: true
   - platform: modbus_controller
     modbus_controller_id: ${device_id}_modbus
     name: "${name} Fan 2 Running"
     register_type: holding
-    address: 1
+    address: 0x0001
     bitmask: 0x0002
-    force_new_range: true
   - platform: modbus_controller
     modbus_controller_id: ${device_id}_modbus
     name: "${name} Fan 3 Running"
     register_type: holding
-    address: 1
+    address: 0x0001
     bitmask: 0x0004
-    force_new_range: true
   - platform: modbus_controller
     modbus_controller_id: ${device_id}_modbus
     name: "${name} Fan 4 Running"
     register_type: holding
-    address: 1
+    address: 0x0001
     bitmask: 0x0008
-    force_new_range: true
 
-  # Битовые статусы исправности по 0x000E (1=OK, 0=FAULT)
+  # 0x000E — Fan fault status (1=OK, 0=fault per manual)
   - platform: modbus_controller
     modbus_controller_id: ${device_id}_modbus
     name: "${name} Fan 1 OK"
     register_type: holding
-    address: 14
+    address: 0x000E
     bitmask: 0x0001
-    force_new_range: true
   - platform: modbus_controller
     modbus_controller_id: ${device_id}_modbus
     name: "${name} Fan 2 OK"
     register_type: holding
-    address: 14
+    address: 0x000E
     bitmask: 0x0002
-    force_new_range: true
   - platform: modbus_controller
     modbus_controller_id: ${device_id}_modbus
     name: "${name} Fan 3 OK"
     register_type: holding
-    address: 14
+    address: 0x000E
     bitmask: 0x0004
-    force_new_range: true
   - platform: modbus_controller
     modbus_controller_id: ${device_id}_modbus
     name: "${name} Fan 4 OK"
     register_type: holding
-    address: 14
+    address: 0x000E
     bitmask: 0x0008
-    force_new_range: true
+
+# ── Select (template wrappers) ────────────────────────────────────────────────
 
 select:
+  - platform: template
+    name: "${name} Governor Mode"
+    entity_category: config
+    optimistic: false
+    options:
+      - "Off"
+      - "Min Speed"
+    lambda: |-
+      const int v = (int) id(${device_id}_governor_raw).state;
+      if (v == 0) return std::string("Off");
+      return std::string("Min Speed");
+    set_action:
+      - lambda: |-
+          int val = (x == "Min Speed") ? 1 : 0;
+          auto call = id(${device_id}_governor_raw).make_call();
+          call.set_value(val);
+          call.perform();
+
   - platform: template
     name: "${name} PWM Frequency"
     entity_category: config
@@ -307,27 +387,27 @@ select:
           else if (x == "5kHz") val = 3;
           else if (x == "10kHz") val = 4;
           else val = 5;
-          id(${device_id}_pwm_freq_raw).publish_state(val);
-          // применим запись в регистр
           auto call = id(${device_id}_pwm_freq_raw).make_call();
           call.set_value(val);
           call.perform();
 
+# ── Buttons (actions) ─────────────────────────────────────────────────────────
+
 button:
-  # Кнопка выхода из режима принудительного управления (записать 0xFFFF в 0x0003)
+  # Write 0xFFFF to 0x0003 — release serial forced control, return to temp control
   - platform: template
     name: "${name} Exit Serial Control"
     on_press:
-      - number.set:
-          id: ${device_id}_exit_serial_ctrl_raw
-          value: 65535
+      - lambda: |-
+          auto cmd = esphome::modbus_controller::ModbusCommandItem::create_write_single_command(
+            id(${device_id}_modbus), 0x0003, 0xFFFF);
+          id(${device_id}_modbus)->queue_command(cmd);
 
-  # Перезапуск устройства (записать 0x00AA в 0x0020)
+  # Write 0x00AA to 0x0020 — reset/restart the controller (write-only register)
   - platform: template
     name: "${name} Restart Device"
     on_press:
-      - number.set:
-          id: ${device_id}_restart_cmd_raw
-          value: 170
-
-
+      - lambda: |-
+          auto cmd = esphome::modbus_controller::ModbusCommandItem::create_write_single_command(
+            id(${device_id}_modbus), 0x0020, 0x00AA);
+          id(${device_id}_modbus)->queue_command(cmd);
