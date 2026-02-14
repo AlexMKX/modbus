@@ -3,6 +3,7 @@ defaults:
     name: ${device_id}
     update_interval: 30s
     command_throttle: 100ms
+    rpm_filter_window: 3
 
 packages:
   online_sensor: !include
@@ -112,11 +113,10 @@ sensor:
     value_type: U_WORD
     unit_of_measurement: "rpm"
     filters:
-      - quantile:
-          window_size: 7
+      - median:
+          window_size: ${rpm_filter_window}
           send_every: 1
           send_first_at: 1
-          quantile: 0.99
 
   # 0x0008 — Fan 2 RPM (read only)
   - platform: modbus_controller
@@ -127,11 +127,10 @@ sensor:
     value_type: U_WORD
     unit_of_measurement: "rpm"
     filters:
-      - quantile:
-          window_size: 7
+      - median:
+          window_size: ${rpm_filter_window}
           send_every: 1
           send_first_at: 1
-          quantile: 0.99
 
   # 0x0009 — Fan 3 RPM (read only)
   - platform: modbus_controller
@@ -142,11 +141,10 @@ sensor:
     value_type: U_WORD
     unit_of_measurement: "rpm"
     filters:
-      - quantile:
-          window_size: 7
+      - median:
+          window_size: ${rpm_filter_window}
           send_every: 1
           send_first_at: 1
-          quantile: 0.99
 
   # 0x000A — Fan 4 RPM (read only)
   - platform: modbus_controller
@@ -157,11 +155,10 @@ sensor:
     value_type: U_WORD
     unit_of_measurement: "rpm"
     filters:
-      - quantile:
-          window_size: 7
+      - median:
+          window_size: ${rpm_filter_window}
           send_every: 1
           send_first_at: 1
-          quantile: 0.99
 
   # 0x000E — Fan fault codes bitmask as raw value (read only)
   - platform: modbus_controller
