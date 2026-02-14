@@ -108,6 +108,7 @@ sensor:
   - platform: modbus_controller
     modbus_controller_id: ${device_id}_modbus
     name: "${name} Fan 1 RPM"
+    id: ${device_id}_fan1_rpm
     register_type: holding
     address: 0x0007
     value_type: U_WORD
@@ -122,6 +123,7 @@ sensor:
   - platform: modbus_controller
     modbus_controller_id: ${device_id}_modbus
     name: "${name} Fan 2 RPM"
+    id: ${device_id}_fan2_rpm
     register_type: holding
     address: 0x0008
     value_type: U_WORD
@@ -136,6 +138,7 @@ sensor:
   - platform: modbus_controller
     modbus_controller_id: ${device_id}_modbus
     name: "${name} Fan 3 RPM"
+    id: ${device_id}_fan3_rpm
     register_type: holding
     address: 0x0009
     value_type: U_WORD
@@ -150,6 +153,7 @@ sensor:
   - platform: modbus_controller
     modbus_controller_id: ${device_id}_modbus
     name: "${name} Fan 4 RPM"
+    id: ${device_id}_fan4_rpm
     register_type: holding
     address: 0x000A
     value_type: U_WORD
