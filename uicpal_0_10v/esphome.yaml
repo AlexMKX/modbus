@@ -1,0 +1,206 @@
+defaults:
+  modbus_master: modbus_master
+  device_id: uicpal_0_10v
+  name: ${device_id}
+  slave_id: 1
+  update_interval: 10s
+  command_throttle: 200ms
+  offline_skip_updates: 5
+  max_cmd_retries: 2
+
+packages:
+  online_sensor: !include
+    file: ../modbus_online/esphome.yaml
+    vars:
+      modbus_id: ${device_id}_modbus
+      device_id: ${device_id}
+      name: ${name}
+
+modbus_controller:
+  - id: ${device_id}_modbus
+    address: ${slave_id}
+    modbus_id: ${modbus_master}
+    setup_priority: -10
+    update_interval: ${update_interval}
+    command_throttle: ${command_throttle}
+    offline_skip_updates: ${offline_skip_updates}
+    max_cmd_retries: ${max_cmd_retries}
+
+sensor:
+  - platform: modbus_controller
+    modbus_controller_id: ${device_id}_modbus
+    id: ${device_id}_ao1_raw
+    name: "${name} AO1 Raw"
+    register_type: holding
+    address: 0x0000
+    value_type: U_WORD
+
+  - platform: modbus_controller
+    modbus_controller_id: ${device_id}_modbus
+    id: ${device_id}_ao2_raw
+    name: "${name} AO2 Raw"
+    register_type: holding
+    address: 0x0001
+    value_type: U_WORD
+
+  - platform: modbus_controller
+    modbus_controller_id: ${device_id}_modbus
+    id: ${device_id}_ao3_raw
+    name: "${name} AO3 Raw"
+    register_type: holding
+    address: 0x0002
+    value_type: U_WORD
+
+  - platform: modbus_controller
+    modbus_controller_id: ${device_id}_modbus
+    id: ${device_id}_ao4_raw
+    name: "${name} AO4 Raw"
+    register_type: holding
+    address: 0x0003
+    value_type: U_WORD
+
+  - platform: template
+    id: ${device_id}_ao1_v
+    name: "${name} AO1 V"
+    unit_of_measurement: "V"
+    accuracy_decimals: 2
+    lambda: |-
+      if (isnan(id(${device_id}_ao1_raw).state)) return NAN;
+      return (id(${device_id}_ao1_raw).state / 4095.0f) * 10.0f;
+    update_interval: ${update_interval}
+
+  - platform: template
+    id: ${device_id}_ao2_v
+    name: "${name} AO2 V"
+    unit_of_measurement: "V"
+    accuracy_decimals: 2
+    lambda: |-
+      if (isnan(id(${device_id}_ao2_raw).state)) return NAN;
+      return (id(${device_id}_ao2_raw).state / 4095.0f) * 10.0f;
+    update_interval: ${update_interval}
+
+  - platform: template
+    id: ${device_id}_ao3_v
+    name: "${name} AO3 V"
+    unit_of_measurement: "V"
+    accuracy_decimals: 2
+    lambda: |-
+      if (isnan(id(${device_id}_ao3_raw).state)) return NAN;
+      return (id(${device_id}_ao3_raw).state / 4095.0f) * 10.0f;
+    update_interval: ${update_interval}
+
+  - platform: template
+    id: ${device_id}_ao4_v
+    name: "${name} AO4 V"
+    unit_of_measurement: "V"
+    accuracy_decimals: 2
+    lambda: |-
+      if (isnan(id(${device_id}_ao4_raw).state)) return NAN;
+      return (id(${device_id}_ao4_raw).state / 4095.0f) * 10.0f;
+    update_interval: ${update_interval}
+
+  - platform: modbus_controller
+    modbus_controller_id: ${device_id}_modbus
+    id: ${device_id}_addr_reg
+    name: "${name} Device Address (reg)"
+    register_type: holding
+    address: 0x07D0
+    value_type: U_WORD
+    entity_category: diagnostic
+
+  - platform: modbus_controller
+    modbus_controller_id: ${device_id}_modbus
+    id: ${device_id}_baud_reg
+    name: "${name} Baud Code (reg)"
+    register_type: holding
+    address: 0x07D1
+    value_type: U_WORD
+    entity_category: diagnostic
+
+  - platform: modbus_controller
+    modbus_controller_id: ${device_id}_modbus
+    id: ${device_id}_parity_reg
+    name: "${name} Parity Code (reg)"
+    register_type: holding
+    address: 0x07D2
+    value_type: U_WORD
+    entity_category: diagnostic
+
+text_sensor:
+  - platform: template
+    name: "${name} Baud (decoded)"
+    lambda: |-
+      int v = (int) id(${device_id}_baud_reg).state;
+      switch (v) {
+        case 0: return {"2400"};
+        case 1: return {"4800"};
+        case 2: return {"9600"};
+        case 3: return {"19200"};
+        case 4: return {"38400"};
+        case 5: return {"57600"};
+        case 6: return {"115200"};
+        case 7: return {"1200"};
+        default: return {"unknown"};
+      }
+    update_interval: ${update_interval}
+
+  - platform: template
+    name: "${name} Parity (decoded)"
+    lambda: |-
+      int v = (int) id(${device_id}_parity_reg).state;
+      switch (v) {
+        case 0: return {"none"};
+        case 1: return {"odd"};
+        case 2: return {"even"};
+        default: return {"unknown"};
+      }
+    update_interval: ${update_interval}
+
+number:
+  - platform: modbus_controller
+    modbus_controller_id: ${device_id}_modbus
+    name: "${name} AO1 Raw Set"
+    id: ${device_id}_ao1_raw_set
+    register_type: holding
+    address: 0x0000
+    value_type: U_WORD
+    min_value: 0
+    max_value: 4095
+    step: 1
+    force_new_range: true
+
+  - platform: modbus_controller
+    modbus_controller_id: ${device_id}_modbus
+    name: "${name} AO2 Raw Set"
+    id: ${device_id}_ao2_raw_set
+    register_type: holding
+    address: 0x0001
+    value_type: U_WORD
+    min_value: 0
+    max_value: 4095
+    step: 1
+    force_new_range: true
+
+  - platform: modbus_controller
+    modbus_controller_id: ${device_id}_modbus
+    name: "${name} AO3 Raw Set"
+    id: ${device_id}_ao3_raw_set
+    register_type: holding
+    address: 0x0002
+    value_type: U_WORD
+    min_value: 0
+    max_value: 4095
+    step: 1
+    force_new_range: true
+
+  - platform: modbus_controller
+    modbus_controller_id: ${device_id}_modbus
+    name: "${name} AO4 Raw Set"
+    id: ${device_id}_ao4_raw_set
+    register_type: holding
+    address: 0x0003
+    value_type: U_WORD
+    min_value: 0
+    max_value: 4095
+    step: 1
+    force_new_range: true

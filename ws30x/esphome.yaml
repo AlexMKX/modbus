@@ -1,0 +1,253 @@
+defaults:
+  modbus_master: modbus_master
+  device_id: ws30x
+  name: ${device_id}
+  slave_id: 1
+  update_interval: 10s
+  command_throttle: 200ms
+  offline_skip_updates: 5
+  max_cmd_retries: 2
+
+packages:
+  online_sensor: !include
+    file: ../modbus_online/esphome.yaml
+    vars:
+      modbus_id: ${device_id}_modbus
+      device_id: ${device_id}
+      name: ${name}
+
+modbus_controller:
+  - id: ${device_id}_modbus
+    address: ${slave_id}
+    modbus_id: ${modbus_master}
+    setup_priority: -10
+    update_interval: ${update_interval}
+    command_throttle: ${command_throttle}
+    offline_skip_updates: ${offline_skip_updates}
+    max_cmd_retries: ${max_cmd_retries}
+
+sensor:
+  - platform: modbus_controller
+    modbus_controller_id: ${device_id}_modbus
+    id: ${device_id}_fault_flags
+    name: "${name} Fault Flags"
+    register_type: holding
+    address: 0x0000
+    value_type: U_WORD
+    entity_category: diagnostic
+
+  - platform: modbus_controller
+    modbus_controller_id: ${device_id}_modbus
+    id: ${device_id}_temperature
+    name: "${name} Temperature"
+    register_type: holding
+    address: 0x0001
+    value_type: S_WORD
+    device_class: temperature
+    unit_of_measurement: "°C"
+    state_class: measurement
+    accuracy_decimals: 1
+    filters:
+      - multiply: 0.1
+
+  - platform: modbus_controller
+    modbus_controller_id: ${device_id}_modbus
+    id: ${device_id}_humidity
+    name: "${name} Humidity"
+    register_type: holding
+    address: 0x0002
+    value_type: U_WORD
+    device_class: humidity
+    unit_of_measurement: "%"
+    state_class: measurement
+    accuracy_decimals: 0
+    filters:
+      - lambda: return (float)(((uint16_t)x) & 0x00FF);
+
+  - platform: modbus_controller
+    modbus_controller_id: ${device_id}_modbus
+    id: ${device_id}_co2
+    name: "${name} CO2"
+    register_type: holding
+    address: 0x0003
+    value_type: U_WORD
+    device_class: carbon_dioxide
+    unit_of_measurement: "ppm"
+    state_class: measurement
+    accuracy_decimals: 0
+
+  - platform: modbus_controller
+    modbus_controller_id: ${device_id}_modbus
+    id: ${device_id}_pressure
+    name: "${name} Pressure"
+    register_type: holding
+    address: 0x0004
+    value_type: U_DWORD
+    register_count: 2
+    device_class: pressure
+    unit_of_measurement: "Pa"
+    state_class: measurement
+    accuracy_decimals: 0
+
+  - platform: modbus_controller
+    modbus_controller_id: ${device_id}_modbus
+    id: ${device_id}_illuminance
+    name: "${name} Illuminance"
+    register_type: holding
+    address: 0x0006
+    value_type: U_DWORD
+    register_count: 2
+    device_class: illuminance
+    unit_of_measurement: "lx"
+    state_class: measurement
+    accuracy_decimals: 0
+
+  - platform: modbus_controller
+    modbus_controller_id: ${device_id}_modbus
+    id: ${device_id}_addr_reg
+    name: "${name} Address (reg)"
+    register_type: holding
+    address: 0x0010
+    value_type: U_WORD
+    entity_category: diagnostic
+
+  - platform: modbus_controller
+    modbus_controller_id: ${device_id}_modbus
+    id: ${device_id}_report_period_reg
+    name: "${name} Report Period (s)"
+    register_type: holding
+    address: 0x0011
+    value_type: U_WORD
+    entity_category: diagnostic
+
+  - platform: modbus_controller
+    modbus_controller_id: ${device_id}_modbus
+    id: ${device_id}_baud_reg
+    name: "${name} Baud Code (reg)"
+    register_type: holding
+    address: 0x0012
+    value_type: U_WORD
+    entity_category: diagnostic
+
+  - platform: modbus_controller
+    modbus_controller_id: ${device_id}_modbus
+    id: ${device_id}_auto_calib_reg
+    name: "${name} CO2 Auto-Calib (reg)"
+    register_type: holding
+    address: 0x0013
+    value_type: U_WORD
+    entity_category: diagnostic
+
+text_sensor:
+  - platform: template
+    name: "${name} Baud (decoded)"
+    lambda: |-
+      int v = (int) id(${device_id}_baud_reg).state;
+      switch (v) {
+        case 0: return {"1200"};
+        case 1: return {"2400"};
+        case 2: return {"4800"};
+        case 3: return {"9600"};
+        case 4: return {"19200"};
+        case 5: return {"38400"};
+        case 6: return {"57600"};
+        case 7: return {"115200"};
+        default: return {"unknown"};
+      }
+    update_interval: ${update_interval}
+
+  - platform: template
+    name: "${name} CO2 Auto-Calib (decoded)"
+    lambda: |-
+      int v = (int) id(${device_id}_auto_calib_reg).state;
+      if (v == 0) return {"off"};
+      if (v == 1) return {"on"};
+      return {"unknown"};
+    update_interval: ${update_interval}
+
+number:
+  - platform: modbus_controller
+    modbus_controller_id: ${device_id}_modbus
+    id: ${device_id}_address_set
+    name: "${name} Address Set"
+    register_type: holding
+    address: 0x0010
+    value_type: U_WORD
+    min_value: 1
+    max_value: 254
+    step: 1
+    mode: box
+    entity_category: config
+
+  - platform: modbus_controller
+    modbus_controller_id: ${device_id}_modbus
+    id: ${device_id}_report_period_set
+    name: "${name} Report Period Set"
+    register_type: holding
+    address: 0x0011
+    value_type: U_WORD
+    min_value: 0
+    max_value: 3600
+    step: 1
+    mode: box
+    unit_of_measurement: "s"
+    entity_category: config
+
+  - platform: modbus_controller
+    modbus_controller_id: ${device_id}_modbus
+    id: ${device_id}_baud_code_set
+    name: "${name} Baud Code Set"
+    register_type: holding
+    address: 0x0012
+    value_type: U_WORD
+    min_value: 0
+    max_value: 7
+    step: 1
+    mode: box
+    entity_category: config
+
+  - platform: modbus_controller
+    modbus_controller_id: ${device_id}_modbus
+    id: ${device_id}_auto_calib_set
+    name: "${name} CO2 Auto-Calib Set"
+    register_type: holding
+    address: 0x0013
+    value_type: U_WORD
+    min_value: 0
+    max_value: 1
+    step: 1
+    mode: box
+    entity_category: config
+
+binary_sensor:
+  - platform: modbus_controller
+    modbus_controller_id: ${device_id}_modbus
+    name: "${name} Temperature Fault"
+    register_type: holding
+    address: 0x0000
+    bitmask: 0x0001
+    entity_category: diagnostic
+
+  - platform: modbus_controller
+    modbus_controller_id: ${device_id}_modbus
+    name: "${name} CO2 Fault"
+    register_type: holding
+    address: 0x0000
+    bitmask: 0x0002
+    entity_category: diagnostic
+
+  - platform: modbus_controller
+    modbus_controller_id: ${device_id}_modbus
+    name: "${name} Pressure Fault"
+    register_type: holding
+    address: 0x0000
+    bitmask: 0x0004
+    entity_category: diagnostic
+
+  - platform: modbus_controller
+    modbus_controller_id: ${device_id}_modbus
+    name: "${name} Illuminance Fault"
+    register_type: holding
+    address: 0x0000
+    bitmask: 0x0008
+    entity_category: diagnostic
