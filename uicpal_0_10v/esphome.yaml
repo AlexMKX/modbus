@@ -15,13 +15,6 @@ packages:
       modbus_id: ${device_id}_modbus
       device_id: ${device_id}
       name: ${name}
-  modbus_address: !include
-    file: ../modbus_address/esphome.yaml
-    vars:
-      modbus_id: ${device_id}_modbus
-      device_id: ${device_id}
-      name: ${name}
-      slave_id: ${slave_id}
 
 modbus_controller:
   - id: ${device_id}_modbus
