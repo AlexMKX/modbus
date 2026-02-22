@@ -36,108 +36,122 @@ modbus_controller:
 sensor:
   - platform: modbus_controller
     modbus_controller_id: ${device_id}_modbus
-    id: ${device_id}_ao1_raw
-    name: "${name} AO1 Raw"
+    id: ${device_id}_ch1_analog_code
+    name: "${name} Channel 1 Analog Code"
     register_type: holding
     address: 0x0000
     value_type: U_WORD
+    accuracy_decimals: 0
+    icon: mdi:counter
 
   - platform: modbus_controller
     modbus_controller_id: ${device_id}_modbus
-    id: ${device_id}_ao2_raw
-    name: "${name} AO2 Raw"
+    id: ${device_id}_ch2_analog_code
+    name: "${name} Channel 2 Analog Code"
     register_type: holding
     address: 0x0001
     value_type: U_WORD
+    accuracy_decimals: 0
+    icon: mdi:counter
 
   - platform: modbus_controller
     modbus_controller_id: ${device_id}_modbus
-    id: ${device_id}_ao3_raw
-    name: "${name} AO3 Raw"
+    id: ${device_id}_ch3_analog_code
+    name: "${name} Channel 3 Analog Code"
     register_type: holding
     address: 0x0002
     value_type: U_WORD
+    accuracy_decimals: 0
+    icon: mdi:counter
 
   - platform: modbus_controller
     modbus_controller_id: ${device_id}_modbus
-    id: ${device_id}_ao4_raw
-    name: "${name} AO4 Raw"
+    id: ${device_id}_ch4_analog_code
+    name: "${name} Channel 4 Analog Code"
     register_type: holding
     address: 0x0003
     value_type: U_WORD
+    accuracy_decimals: 0
+    icon: mdi:counter
 
   - platform: template
-    id: ${device_id}_ao1_v
-    name: "${name} AO1 V"
+    id: ${device_id}_ch1_v
+    name: "${name} Channel 1 Voltage"
     unit_of_measurement: "V"
     accuracy_decimals: 2
     lambda: |-
-      if (isnan(id(${device_id}_ao1_raw).state)) return NAN;
-      return (id(${device_id}_ao1_raw).state / 4095.0f) * 10.0f;
+      if (isnan(id(${device_id}_ch1_analog_code).state)) return NAN;
+      return (id(${device_id}_ch1_analog_code).state / 4095.0f) * 10.0f;
     update_interval: ${update_interval}
 
   - platform: template
-    id: ${device_id}_ao2_v
-    name: "${name} AO2 V"
+    id: ${device_id}_ch2_v
+    name: "${name} Channel 2 Voltage"
     unit_of_measurement: "V"
     accuracy_decimals: 2
     lambda: |-
-      if (isnan(id(${device_id}_ao2_raw).state)) return NAN;
-      return (id(${device_id}_ao2_raw).state / 4095.0f) * 10.0f;
+      if (isnan(id(${device_id}_ch2_analog_code).state)) return NAN;
+      return (id(${device_id}_ch2_analog_code).state / 4095.0f) * 10.0f;
     update_interval: ${update_interval}
 
   - platform: template
-    id: ${device_id}_ao3_v
-    name: "${name} AO3 V"
+    id: ${device_id}_ch3_v
+    name: "${name} Channel 3 Voltage"
     unit_of_measurement: "V"
     accuracy_decimals: 2
     lambda: |-
-      if (isnan(id(${device_id}_ao3_raw).state)) return NAN;
-      return (id(${device_id}_ao3_raw).state / 4095.0f) * 10.0f;
+      if (isnan(id(${device_id}_ch3_analog_code).state)) return NAN;
+      return (id(${device_id}_ch3_analog_code).state / 4095.0f) * 10.0f;
     update_interval: ${update_interval}
 
   - platform: template
-    id: ${device_id}_ao4_v
-    name: "${name} AO4 V"
+    id: ${device_id}_ch4_v
+    name: "${name} Channel 4 Voltage"
     unit_of_measurement: "V"
     accuracy_decimals: 2
     lambda: |-
-      if (isnan(id(${device_id}_ao4_raw).state)) return NAN;
-      return (id(${device_id}_ao4_raw).state / 4095.0f) * 10.0f;
+      if (isnan(id(${device_id}_ch4_analog_code).state)) return NAN;
+      return (id(${device_id}_ch4_analog_code).state / 4095.0f) * 10.0f;
     update_interval: ${update_interval}
 
   - platform: modbus_controller
     modbus_controller_id: ${device_id}_modbus
-    id: ${device_id}_addr_reg
-    name: "${name} Device Address (reg)"
+    id: ${device_id}_device_address_reg
+    name: "${name} Device Address Register"
     register_type: holding
     address: 0x07D0
     value_type: U_WORD
+    accuracy_decimals: 0
     entity_category: diagnostic
+    icon: mdi:numeric
 
   - platform: modbus_controller
     modbus_controller_id: ${device_id}_modbus
-    id: ${device_id}_baud_reg
-    name: "${name} Baud Code (reg)"
+    id: ${device_id}_baud_rate_code_reg
+    name: "${name} Baud Rate Code Register"
     register_type: holding
     address: 0x07D1
     value_type: U_WORD
+    accuracy_decimals: 0
     entity_category: diagnostic
+    icon: mdi:speedometer
 
   - platform: modbus_controller
     modbus_controller_id: ${device_id}_modbus
-    id: ${device_id}_parity_reg
-    name: "${name} Parity Code (reg)"
+    id: ${device_id}_parity_code_reg
+    name: "${name} Parity Code Register"
     register_type: holding
     address: 0x07D2
     value_type: U_WORD
+    accuracy_decimals: 0
     entity_category: diagnostic
+    icon: mdi:code-tags
 
 text_sensor:
   - platform: template
-    name: "${name} Baud (decoded)"
+    name: "${name} Baud Rate (decoded)"
     lambda: |-
-      int v = (int) id(${device_id}_baud_reg).state;
+      int v = (int) id(${device_id}_baud_rate_code_reg).state;
       switch (v) {
         case 0: return {"2400"};
         case 1: return {"4800"};
@@ -154,7 +168,7 @@ text_sensor:
   - platform: template
     name: "${name} Parity (decoded)"
     lambda: |-
-      int v = (int) id(${device_id}_parity_reg).state;
+      int v = (int) id(${device_id}_parity_code_reg).state;
       switch (v) {
         case 0: return {"none"};
         case 1: return {"odd"};
@@ -166,8 +180,8 @@ text_sensor:
 number:
   - platform: modbus_controller
     modbus_controller_id: ${device_id}_modbus
-    name: "${name} AO1 Raw Set"
-    id: ${device_id}_ao1_raw_set
+    name: "${name} Channel 1 Analog Code Set"
+    id: ${device_id}_ch1_analog_code_set
     register_type: holding
     address: 0x0000
     value_type: U_WORD
@@ -178,8 +192,8 @@ number:
 
   - platform: modbus_controller
     modbus_controller_id: ${device_id}_modbus
-    name: "${name} AO2 Raw Set"
-    id: ${device_id}_ao2_raw_set
+    name: "${name} Channel 2 Analog Code Set"
+    id: ${device_id}_ch2_analog_code_set
     register_type: holding
     address: 0x0001
     value_type: U_WORD
@@ -190,8 +204,8 @@ number:
 
   - platform: modbus_controller
     modbus_controller_id: ${device_id}_modbus
-    name: "${name} AO3 Raw Set"
-    id: ${device_id}_ao3_raw_set
+    name: "${name} Channel 3 Analog Code Set"
+    id: ${device_id}_ch3_analog_code_set
     register_type: holding
     address: 0x0002
     value_type: U_WORD
@@ -202,8 +216,8 @@ number:
 
   - platform: modbus_controller
     modbus_controller_id: ${device_id}_modbus
-    name: "${name} AO4 Raw Set"
-    id: ${device_id}_ao4_raw_set
+    name: "${name} Channel 4 Analog Code Set"
+    id: ${device_id}_ch4_analog_code_set
     register_type: holding
     address: 0x0003
     value_type: U_WORD
@@ -211,3 +225,48 @@ number:
     max_value: 4095
     step: 1
     force_new_range: true
+
+  - platform: modbus_controller
+    modbus_controller_id: ${device_id}_modbus
+    name: "${name} Device Address Set"
+    id: ${device_id}_device_address_set
+    register_type: holding
+    address: 0x07D0
+    value_type: U_WORD
+    min_value: 1
+    max_value: 254
+    step: 1
+    mode: box
+    entity_category: config
+    on_value:
+      then:
+        - lambda: |-
+            id(${device_id}_modbus).set_address((int)x);
+
+select:
+  - platform: modbus_controller
+    modbus_controller_id: ${device_id}_modbus
+    id: ${device_id}_baud_rate_set
+    name: "${name} Baud Rate Set"
+    address: 0x07D1
+    entity_category: config
+    optionsmap:
+      "2400": 0
+      "4800": 1
+      "9600": 2
+      "19200": 3
+      "38400": 4
+      "57600": 5
+      "115200": 6
+      "1200": 7
+
+  - platform: modbus_controller
+    modbus_controller_id: ${device_id}_modbus
+    id: ${device_id}_parity_set
+    name: "${name} Parity Set"
+    address: 0x07D2
+    entity_category: config
+    optionsmap:
+      "none": 0
+      "odd": 1
+      "even": 2
