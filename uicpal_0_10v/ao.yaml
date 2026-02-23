@@ -168,6 +168,7 @@ select:
     address: 0x07D1
     entity_category: config
     optionsmap:
+      "1200": 7
       "2400": 0
       "4800": 1
       "9600": 2
@@ -175,7 +176,6 @@ select:
       "38400": 4
       "57600": 5
       "115200": 6
-      "1200": 7
 
   - platform: modbus_controller
     modbus_controller_id: ${device_id}_modbus
