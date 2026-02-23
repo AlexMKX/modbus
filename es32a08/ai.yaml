@@ -1,0 +1,111 @@
+sensor:
+  - platform: adc
+    internal: true    
+    id: i3
+    name: "cur1 i3"
+    update_interval: 5s
+    attenuation: auto
+    pin:
+      number: GPIO34
+      mode:
+        input: true
+    unit_of_measurement: mA        
+    filters: 
+      - multiply: 10
+          
+  - platform: adc
+    internal: true    
+    id: i1
+    name: "cur1 i1"
+    update_interval: 5s
+    attenuation: auto
+    pin:
+      number: GPIO36
+      mode:
+        input: true  
+    unit_of_measurement: mA        
+    filters: 
+      - multiply: 10              
+  - platform: adc
+    internal: true        
+    id: i2
+    name: "cur1 i2"
+    update_interval: 5s
+    attenuation: auto
+    pin:
+      number: GPIO39
+      mode:
+        input: true  
+    unit_of_measurement: mA        
+    filters: 
+      - multiply: 10              
+
+  - platform: adc
+    id: i4
+    name: "cur1 i4"
+    update_interval: 5s
+    internal: true          
+    attenuation: auto
+    pin:
+      number: GPIO35
+      mode:
+        input: true  
+    unit_of_measurement: mA        
+    filters: 
+      - multiply: 10              
+
+  - platform: adc
+    id: v1
+    name: "volt v1"
+    internal: true          
+    update_interval: 5s
+    attenuation: auto
+    pin:
+      number: GPIO32
+      mode:
+        input: true  
+
+  - platform: adc
+    id: v2
+    name: "volt v2"
+    update_interval: 5s
+    internal: true          
+    attenuation: auto
+    pin:
+      number: GPIO33
+      mode:
+        input: true  
+
+  - &i_4_20_base
+    platform: template
+    id: i2_4_20
+    internal: true          
+    name: "i2 4-20"
+    unit_of_measurement: "%"
+    update_interval: 5s
+    lambda: |-
+      return id(i2).state>=4?id(i2).state:NAN;
+    filters:
+      - calibrate_linear: 
+          datapoints:
+            - 4 -> 0.0
+            - 20 -> 100
+
+  - << : *i_4_20_base
+    id: i1_4_20
+    name: "i1 4-20"
+    lambda: |-
+      return id(i1).state>=4?id(i1).state:NAN;
+
+  - << : *i_4_20_base
+    id: i3_4_20
+    internal: true      
+    name: "i3 4-20"
+    lambda: |-
+      return id(i3).state>=4?id(i3).state:NAN;    
+
+  - << : *i_4_20_base
+    id: i4_4_20
+    name: "i4 4-20"
+    lambda: |-
+      return id(i4).state>=4?id(i4).state:NAN;    

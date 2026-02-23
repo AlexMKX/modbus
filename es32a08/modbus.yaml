@@ -1,0 +1,13 @@
+defaults:
+  serial_port_speed: "9600"
+
+uart:
+  id: uart_modbus_client
+  tx_pin: 1
+  rx_pin: 3
+  baud_rate: ${serial_port_speed}
+
+modbus:
+  flow_control_pin: 22
+  send_wait_time: 200ms
+  id: modbus_master

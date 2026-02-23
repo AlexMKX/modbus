@@ -1,0 +1,71 @@
+sn74hc165:
+  - id: 'input_hub'
+    data_pin: GPIO5
+    clock_pin: GPIO17
+    load_pin: GPIO16
+
+binary_sensor:
+  - platform: gpio
+    internal: true
+    id: in_1
+    name: "in 1"
+    pin: 
+      sn74hc165: 'input_hub'
+      number: 0
+      inverted: true
+  - platform: gpio
+    internal: true  
+    id: in_2
+    name: "in 2"
+    pin: 
+      sn74hc165: 'input_hub'
+      number: 1
+      inverted: true
+  - platform: gpio
+    internal: true  
+    id: in_3
+    name: "in 3"
+    pin: 
+      sn74hc165: 'input_hub'
+      number: 2
+      inverted: true
+  - platform: gpio
+    internal: true  
+    id: in_4
+    name: "in 4"
+    pin: 
+      sn74hc165: 'input_hub'
+      number: 3
+      inverted: true
+  - platform: gpio
+    internal: true  
+    id: in_5
+    name: "in 5"
+    pin: 
+      sn74hc165: 'input_hub'
+      number: 4
+      inverted: true
+  - platform: gpio
+    internal: true    
+    id: in_6
+    name: "in 6"
+    pin: 
+      sn74hc165: 'input_hub'
+      number: 5
+      inverted: true
+  - platform: gpio
+    internal: true    
+    id: in_7
+    name: "in 7"
+    pin: 
+      sn74hc165: 'input_hub'
+      number: 6
+      inverted: true
+  - platform: gpio
+    internal: true    
+    id: in_8
+    name: "in 8"
+    pin: 
+      sn74hc165: 'input_hub'
+      number: 7
+      inverted: true

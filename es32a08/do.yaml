@@ -1,0 +1,50 @@
+sn74hc595:
+  - id: 'output_hub'
+    data_pin: GPIO13
+    clock_pin: GPIO27
+    latch_pin: GPIO14
+    oe_pin: GPIO4
+    sr_count: 3
+
+output:
+  - platform: gpio
+    id: relay_1
+    pin:
+      sn74hc595: 'output_hub'
+      number: 16
+
+  - platform: gpio
+    id: relay_2
+    pin:
+      sn74hc595: 'output_hub'
+      number: 17
+  - platform: gpio
+    id: relay_3
+    pin:
+      sn74hc595: 'output_hub'
+      number: 18
+  - platform: gpio
+    id: relay_4
+    pin:
+      sn74hc595: 'output_hub'
+      number: 19
+  - platform: gpio
+    id: relay_5
+    pin:
+      sn74hc595: 'output_hub'
+      number: 20
+  - platform: gpio
+    id: relay_6
+    pin:
+      sn74hc595: 'output_hub'
+      number: 21
+  - platform: gpio
+    id: relay_7
+    pin:
+      sn74hc595: 'output_hub'
+      number: 22
+  - platform: gpio
+    id: relay_8
+    pin:
+      sn74hc595: 'output_hub'
+      number: 23
