@@ -110,37 +110,37 @@ sensor:
   - platform: modbus_controller
     modbus_controller_id: ${device_id}_modbus
     id: ${device_id}_device_address_reg
-    name: "${name} Device Address Register"
+    internal: true
     register_type: holding
     address: 0x07D0
     value_type: U_WORD
-    accuracy_decimals: 0
-    entity_category: diagnostic
-    icon: mdi:numeric
 
   - platform: modbus_controller
     modbus_controller_id: ${device_id}_modbus
     id: ${device_id}_baud_rate_code_reg
-    name: "${name} Baud Rate Code Register"
+    internal: true
     register_type: holding
     address: 0x07D1
     value_type: U_WORD
-    accuracy_decimals: 0
-    entity_category: diagnostic
-    icon: mdi:speedometer
 
   - platform: modbus_controller
     modbus_controller_id: ${device_id}_modbus
     id: ${device_id}_parity_code_reg
-    name: "${name} Parity Code Register"
+    internal: true
     register_type: holding
     address: 0x07D2
     value_type: U_WORD
-    accuracy_decimals: 0
-    entity_category: diagnostic
-    icon: mdi:code-tags
 
 text_sensor:
+  - platform: template
+    name: "${name} Device Address"
+    entity_category: diagnostic
+    icon: mdi:numeric
+    lambda: |-
+      if (isnan(id(${device_id}_device_address_reg).state)) return {"unknown"};
+      return {to_string((int)id(${device_id}_device_address_reg).state)};
+    update_interval: ${update_interval}
+
   - platform: template
     name: "${name} Baud Rate (decoded)"
     lambda: |-

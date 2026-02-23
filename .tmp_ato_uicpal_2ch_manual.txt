@@ -1,0 +1,985 @@
+RS485 to 4-20mA/0-5V/0-10V Converter, 2 Channel
+User Manual
+
+www.ato.com
+
+sales@ato.com
+
+1
+
+800-585-1519
+
+Global Shipping
+
+1.1 Product Overview
+This product is an industrial-grade standard analog output product, supporting 2-channel
+outputs with ranges of 0-20mA, 0-5V and 0-10V. The application layer adopts the standard
+ModBus-RTU protocol, which conforms to industrial standards and is suitable for various
+industrial occasions and automation systems. Convenient to communicate with the upper
+computer, can realize rapid networking and build monitoring system. Suitable for various
+industrial occasions and automation systems.
+
+1.2 Functional Features
+
+
+Supports 2 analog outputs of current type and voltage type, each output type is selectable.
+
+
+
+12-bit resolution, 0.1% accuracy ADC.
+
+
+
+Support standard ModBus-RTU communication protocol.
+
+
+
+Communication operation indicator, anti-dead watchdog.
+
+
+
+With lightning, electrostatic protection RS485 communication interface, op amp
+signal isolation.
+
+
+
+Address, baud rate can be set through the upper computer software.
+
+
+
+Anti-reverse connection, over-voltage protection, over-current protection, short
+circuit protection.
+
+1.3 Main Technical Indicators
+DC Power Supply (default)
+
+5-30V
+
+Maximum Power
+Consumption
+Operating Temperature
+
+0.08W (DC12V)
+-40°C~+60°C
+
+AD Conversion Resolution
+
+12 bits
+
+Accuracy
+
+Typical Accuracy: ±0.1%FS
+
+Output Signal
+
+4~20mA, 0~5V, 0~10V optional
+
+Communication Interface
+
+ModBus-RTU
+
+Address Range
+
+1-254 (default 1)
+Numerical range 0-7
+0: 2400bps 1:4800bps 2: 9600bps 3: 19200bps
+
+Baud Rate
+
+4: 38400bps 5: 57600bps 6: 115200bps 7:
+1200bps Default: 4800bps
+
+Output Impedance
+
+www.ato.com
+
+4-20mA
+
+≤200Ω
+
+0-5V/0-10V
+
+≥10kΩ
+
+sales@ato.com
+
+2
+
+800-585-1519
+
+Global Shipping
+
+1.4 Analog Correspondence Table
+Type
+
+Data Acquisition (12-bit AD)
+
+4~20mA
+
+0~4095
+
+(Compatible
+with 0-
+
+0 mA corresponds to 0, and 20 mA
+corresponds to 4095 Example: If the
+read data value is 3000, then the
+measured output current signal is:
+(3000/4095) * 20 mA = 14.65 mA
+
+0~4095
+
+20mA)
+0~5V
+
+0~10V
+
+Calculation Example
+4 mA corresponds to 0, and 20 mA
+corresponds to 4095. Example: If the
+read data value is 3000, then the
+measured output current signal is:
+[(3000/4095) * 16 + 4] mA = 15.72
+mA.
+
+Example: If the read data value is
+300, then the measured output
+current signal is: (300/4095) * 5 V =
+0.37 V
+
+0~4095
+
+Example: If the read data value is
+1000, the measured output current
+signal is: (1000/4095) * 10V = 2.44V
+
+0~4095
+
+Note: 4-20 mA and 0-20 mA are switched by the register. For detailed information, please refer to
+the “Register Address Definition” section.
+
+www.ato.com
+
+sales@ato.com
+
+3
+
+800-585-1519
+
+Global Shipping
+
+2.1 Pre-installation Inspection of Equipment
+Equipment List
+
+
+485 to analog module (2-way) 1 unit
+
+2.2 Wiring Instructions
+
+Power supply input
+& communication
+
+Signal output
+
+Identification Explanation
+Power supply
+VCC
+input positive
+Power supply
+GND
+input ground
+A+
+485-A
+B485-B
+OUT0
+Analog output 1
+Analog output
+GND
+negative
+OUT1
+Analog output 2
+Analog output
+GND
+negative
+
+Note
+5~30V DC
+485 communication
+
+2.3 Description of Output Type Switching
+Customers can switch the current type output or voltage type output according to the site
+conditions.
+1. Open the configuration software and communicate with the upper computer, select 0-5V, 010V, 4-20mA for each output type.
+2. The circuit board needs to be changed accordingly.
+If you choose current type input, short the corresponding number of shorting caps to the left
+and center two pins. If voltage input is selected, short the right and center pins of the
+corresponding shorting cap. I and V are indicated on the board.
+
+www.ato.com
+
+sales@ato.com
+
+4
+
+800-585-1519
+
+Global Shipping
+
+3.1 Software Selection
+When the sensor is properly connected to the computer via USB to 485 and powered, the
+correct COM port can be seen on the computer (“My Computer - Properties - Device
+Manager - Ports” for COM ports).
+
+Open the package, select“Debugging Software”-- 485 Parameter Configuration Software”,
+find
+“- the software and open it.
+If you can't find the COM port in the device manager, it means you haven't installed the USB
+to
+485 driver (in the package) or you haven't installed the driver correctly, please contact the
+technician for help.
+3.2 Parameter Configuration
+1. After reaching the configuration interface, first of all, according to the method in chapter
+
+3.1, get the serial port number and select the correct serial port.
+2. Click the test baud rate of the software, the software will test the baud rate and address of
+
+the current device, the default baud rate is 4800bit/s, and the default address is 0x01.
+The default baud rate is 4800bit/s, and the default address is 0x01.
+3. Modify the address and baud rate according to your needs, and check the current functional
+
+status of the device.
+If the test is unsuccessful, please recheck the wiring of the device and the installation of the
+485 driver.
+
+3.2 Basic Parameters of Communication
+Code
+
+8-bit Binary
+
+Data Bits
+
+8-bit
+
+Parity Bit
+
+None
+
+Stop Bit
+
+1 bit
+
+Error Check
+
+CRC ( redundant cyclic code )
+
+Baud Rate
+
+1200～115200bps can be set, factory default is 4800bps N.8.1
+
+www.ato.com
+
+sales@ato.com
+
+5
+
+800-585-1519
+
+Global Shipping
+
+4.1 Data Frame Format Definition
+The ModBus-RTU communication protocol is used in the following format:
+Initial structure ≥ 4 bytes of time
+Address code = 1 byte
+Function code=1 byte
+Data area = N bytes
+Error check = 16 bit CRC code End structure ≥ 4 bytes of time
+Address code: address of the transmitter, unique in the communication network (factory
+default 0x01), range 0x01-0xFE Function code: indication of the function of the command
+issued by the host.
+Data area: data area is specific communication data, note that 16bits data high byte in front!
+CRC code: two-byte checksum code.
+The host asks for the frame structure:
+Address
+
+Function
+
+Register Start
+
+Register
+
+Low Check
+
+High Check
+
+Code
+
+Code
+
+Address
+
+Length
+
+Digit Byte
+
+Digit Byte
+
+1 byte
+
+1 byte
+
+2 bytes
+
+2 bytes
+
+1 byte
+
+1 byte
+
+Slave answer frame structure:
+Address Functi
+Code
+on Code
+1 byte
+
+1 byte
+
+www.ato.com
+
+No. of
+Effective
+Bytes
+1 byte
+
+Data 1
+Area
+
+Data 2
+Area
+
+Data N
+Area
+
+Low Check
+Digit Byte
+
+High Check
+Digit Byte
+
+2 bytes
+
+2 bytes
+
+2 bytes
+
+1 byte
+
+1 byte
+
+sales@ato.com
+
+6
+
+800-585-1519
+
+Global Shipping
+
+4.2 Holding Register Address Definition
+Slave Mode Register
+Register
+Addresses
+0000 H
+
+Content
+
+PLC or
+Configuration
+
+Function Code
+Support
+
+Address
+40001
+
+Remarks
+
+1-channel
+
+0x03/0x04/0x06
+
+Range: 0-4095
+
+0x03/0x04/0x06
+
+Range: 0-4095
+
+relationship
+
+0x03/0x04/0x06
+
+0: 0~20mA
+1: 4~20mA
+Default value 1
+Note: This register
+also applies to the
+corresponding
+relationship in
+master station
+mode.
+
+Device address
+
+0x03/0x04/0x06 1-254, default value 1
+
+analog
+value
+
+0001 H
+
+40002
+40086
+
+0055H
+
+07D0 H
+
+07D1 H
+
+07D2 H
+
+www.ato.com
+
+42001
+
+42002
+
+2-channel analog
+value
+Switched current
+output
+
+Value range: 0-7;
+0: 2400bps
+1: 4800bps
+2: 9600bps
+3: 19200bps
+4: 38400bps
+5: 57600bps
+6: 115200bps
+7: 1200bps
+Default: 4800bps
+
+Baud rate
+
+0x03/0x04/0x06
+
+Parity bit
+
+Value range: 0-2
+0: No parity 1: Odd parity
+0x03/0x04/0x06
+2: Even parity
+Default: No parity
+
+42003
+
+sales@ato.com
+
+7
+
+800-585-1519
+
+Global Shipping
+
+4.3 Communication Protocols Examples and Explanations
+Master Mode Register
+0050H
+0051H
+0052H
+0053H
+
+40081
+40082
+40083
+40084
+
+Host mode enabled
+Timeout
+Polling interval
+Fault tolerance count
+
+0x03/0x04/0x06
+0x03/0x04/0x06
+0x03/0x04/0x06
+0x03/0x04/0x06
+
+0054H
+
+40084
+
+Exit configuration mode
+
+0x03/0x04/0x06
+
+1000H
+
+44097
+
+Channel 1 enabled
+
+0x03/0x04/0x06
+
+1001H
+
+44098
+
+Channel 2 enabled
+
+0x03/0x04/0x06
+
+1010H
+
+44113
+
+1011H
+
+44114
+
+1020H
+
+44129
+
+Channel 1 function code
+
+1021H
+
+44130
+
+Channel 2 function code
+
+1030H
+
+44145
+
+1031H
+
+44146
+
+1040H
+1041H
+
+44161
+44162
+
+1050H
+
+44177
+
+1051H
+
+44178
+
+www.ato.com
+
+Channel 1 device
+address
+Channel 2 device
+address
+
+0x03/0x04/0x06
+
+Address range 1-254
+
+0x03/0x04/0x06
+
+Address range 1-254
+
+Supports 03 04 function
+codes
+Supports 03 04 function
+0x03/0x04/0x06
+codes
+0x03/0x04/0x06
+
+Channel 1 register
+address
+Channel 2 register
+address
+Channel 1 register length
+Channel 2 register length
+
+0x03/0x04/0x06
+0x03/0x04/0x06
+0x03/0x04/0x06
+0x03/0x04/0x06
+
+0: 16-bit unsigned bigendian
+1: 16-bit unsigned
+little-endian
+2: 16-bit signed bigendian
+0x03/0x04/0x06
+3: 16-bit signed littleendian
+4: 32-bit unsigned bigendian
+5: 32-bit unsigned
+little-endian
+6: 32-bit unsigned
+Low word, high byte
+7: 32-bit signed bigendian
+0x03/0x04/0x06 8: 32-bit signed littleendian
+9: 32-bit signed
+Low word, high byte
+10: Floating-point big-
+
+Channel 1 Data Type
+
+Channel 2 data type
+
+sales@ato.com
+
+0: Off 1: On
+Default: 500ms
+Default: 200ms
+Default: 3 times
+0: Exit configuration
+mode
+1: Enter configuration
+mode
+0: Close channel
+1: Open channel
+0: Close channel
+1: Open channel
+
+8
+
+800-585-1519
+
+Global Shipping
+
+endian
+11: Floating-point
+little-endian
+12: Floating-point
+Low word, high byte
+0080H
+
+40129
+
+0081H
+
+40130
+
+0082H
+
+40131
+
+0083H
+
+40132
+
+0084H
+
+40133
+
+0085H
+
+40134
+
+0086H
+
+40135
+
+0087H
+
+40136
+
+Channel 1 upper range
+limit high byte
+Channel 1 upper range
+limit low byte
+Channel 1 lower range
+limit high byte
+Channel 1 lower range
+limit low byte
+Channel 2 upper range
+limit high byte
+Channel 2 upper range
+limit low byte
+Channel 2 lower range
+limit high byte
+Channel 2 lower range
+limit low byte
+
+0x03/0x04/0x06
+0x03/0x04/0x06
+0x03/0x04/0x06
+0x03/0x04/0x06
+0x03/0x04/0x06
+0x03/0x04/0x06
+0x03/0x04/0x06
+0x03/0x04/0x06
+
+4.4.1 Read Signal Value
+Example: Read the analog signal value of channels 1 and 2 at device address 0x01.
+Query Frames
+Address
+Code
+
+Function
+Code
+
+Starting
+Address
+
+Data
+Length
+
+Low Check
+Digit Byte
+
+High Check
+Digit
+
+0x01
+
+0x03
+
+0x00 0x00
+
+0x00 0x02
+
+0xC4
+
+Byte
+0x0B
+
+Response Frame
+
+Address
+Code
+
+0x01
+www.ato.com
+
+Function
+Code
+
+0x03
+
+No. of
+Effective
+Bytes
+Return
+
+0x04
+sales@ato.com
+
+Analog 1
+
+Analog 2
+
+Low
+Check
+Digit
+Byte
+
+High Check
+Digit
+Byte
+
+0x01
+
+0x00
+
+0x2C
+
+0xC8
+
+8
+
+800-585-1519
+
+0x3B
+
+0x90
+Global Shipping
+
+Description:
+Returns the 1st channel data as 012CH, which converts to decimal 300, indicating that the current
+analog acquisition data code value is 300.
+Return the 2nd channel data is 0x00C8, converted to decimal 200, indicating that the current
+analog acquisition data code value is 200.
+If the module is 0-5V and the code value is 3000, the output signal is 5 * 3000/4095 =
+3.66V. If the module is 0-10V, the code value is 3000, the output signal is 10 *
+3000/4095 = 7.33V.
+If the module is 4-20mA and the code value is 3000, the output signal is 20 * 3000/4095 =
+14.65mA.
+
+4.4.2 Read Device Address
+Example: Read device address 0x01 Address
+Query Frames
+Address
+Code
+
+Function
+Code
+
+Starting
+Address
+
+Data
+Length
+
+Low Check
+Digit Byte
+
+High Check
+Digit
+
+0x01
+
+0x03
+
+0x07 0xD0
+
+0x00
+0x01
+
+0x84
+
+Byte
+0x87
+
+Address
+Code
+
+Low Check
+Digit Byte
+
+High Check
+Digit
+
+Response Frame
+
+Address
+Code
+0x01
+
+www.ato.com
+
+Function
+Code
+0x03
+
+No. of
+Effective
+Bytes
+Return
+0x02
+
+sales@ato.com
+
+Byte
+0x00
+0x01
+
+8
+
+0x79
+
+800-585-1519
+
+0x84
+
+Global Shipping
+
+4.4.3 Read Device Baud Rate
+Example: Read the baud rate of device address 0x01.
+Query Frames
+Address
+Code
+
+Function
+Code
+
+Starting Address
+
+Data
+Length
+
+Low Check
+Digit Byte
+
+High Check
+Digit
+Byte
+
+0x01
+
+0x03
+
+0x07 0xD1
+
+0x00
+0x01
+
+0xD5
+
+0x47
+
+Response Frame
+
+Address
+Code
+
+Function
+Code
+
+No. of
+Effective
+Address Code
+Bytes Return
+
+Low Check
+Digit Byte
+
+High Check
+Digit
+Byte
+
+0x01
+
+0x03
+
+0x02
+
+0x00 0x01
+
+0x79
+
+0x84
+
+The baud rate in the returned data is 0x01, indicating that the baud rate is 4800bps.
+
+4.4.4 The Device Cannot Connect to the Computer
+1. The computer has multiple COM ports and the port selected is incorrect.
+2. The device address is wrong, or there are devices with duplicate addresses (factory default is
+
+1 for all).
+3. The baud rate, parity, data bits, and stop bits are incorrect.
+4. Host polling interval and wait for answer time are too short, need to be set above 200ms.
+5. The 485 bus is disconnected, or the A and B wires are reversed.
+6. The number of devices is too large or the wiring is too long, the power supply should be
+
+nearby, add 485 enhancer, and increase the 120Ω termination resistor.
+7. USB to 485 driver is not installed or damaged.
+8. The device is damaged.
+www.ato.com
+
+sales@ato.com
+
+8
+
+800-585-1519
+
+Global Shipping
+
+
