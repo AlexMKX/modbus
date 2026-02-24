@@ -155,6 +155,7 @@ number:
     step: 1
     mode: box
     entity_category: config
+    use_write_multiple: false
     on_value:
       then:
         - lambda: |-
