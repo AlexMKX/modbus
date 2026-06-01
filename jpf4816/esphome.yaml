@@ -4,6 +4,19 @@ defaults:
     update_interval: 30s
     command_throttle: 100ms
     rpm_filter_window: 3
+    # Initial value of the per-device auto-mode flag (NVS-backed, only used
+    # on first boot of a fresh device — subsequent boots restore from NVS).
+    # "false" -> manual mode by default. Backward-compatible with setups
+    #            that drive the fan via external lambdas using
+    #            id(${device_id}_speed_percentage).make_call() (e.g. mast-rack).
+    # "true"  -> temperature-PID mode by default (register 0x0003 = 0xFFFF).
+    #            Recommended when ESPHome is the only master and you want
+    #            the JPF4816 to self-regulate.
+    auto_mode_initial: "false"
+    # How often (seconds) we re-assert auto mode while it's enabled. This
+    # heals accidental external writes to 0x0003. Set high or use "0s" to
+    # rely on a single boot-time write.
+    auto_mode_reassert_interval: 60s
 
 packages:
   online_sensor: !include
@@ -41,16 +54,58 @@ globals:
     restore_value: true
     initial_value: "(${slave_id})"
 
+  # Auto/Manual mode flag (single source of truth, persisted in NVS).
+  # The JPF4816 does NOT expose its mode in any register: reading 0x0003
+  # always returns the current PWM % regardless of mode (manual §8.2/§9.6),
+  # so we track the intent locally on the ESP and re-assert it on boot
+  # and periodically.
+  - id: ${device_id}_auto_mode
+    type: bool
+    restore_value: true
+    initial_value: ${auto_mode_initial}
+
 esphome:
   on_boot:
-    priority: -5
+    # 1. Re-apply slave address from NVS (early — before first transaction).
+    - priority: -5
+      then:
+        - lambda: |-
+            int addr = id(${device_id}_slave_id);
+            if (addr > 0 && addr <= 254) {
+              id(${device_id}_modbus).set_address(addr);
+              ESP_LOGI("modbus", "${device_id}: slave address set from NVS: %d", addr);
+            }
+    # 2. Re-assert auto/manual mode. JPF4816 itself reverts to temperature
+    #    control on its own power-cycle, so without this our NVS flag would
+    #    silently disagree with reality after a full power-down. Run late,
+    #    after modbus/uart/wifi are fully up.
+    - priority: -200
+      then:
+        - delay: 10s
+        - lambda: |-
+            uint16_t val = id(${device_id}_auto_mode)
+                            ? (uint16_t) 0xFFFF
+                            : (uint16_t) 0x000A;
+            auto cmd = esphome::modbus_controller::ModbusCommandItem::create_write_single_command(
+              id(${device_id}_modbus), 0x0003, val);
+            id(${device_id}_modbus)->queue_command(cmd);
+            ESP_LOGI("modbus", "${device_id}: boot mode re-assert: %s",
+                     id(${device_id}_auto_mode) ? "AUTO (0xFFFF)" : "MANUAL (10%)");
+
+# Periodic self-healing: re-assert 0xFFFF while we are in auto mode, so any
+# external write to 0x0003 (e.g. accidental UI poke at the internal raw
+# number) cannot keep us stuck in manual.
+interval:
+  - interval: ${auto_mode_reassert_interval}
     then:
-      - lambda: |-
-          int addr = id(${device_id}_slave_id);
-          if (addr > 0 && addr <= 254) {
-            id(${device_id}_modbus).set_address(addr);
-            ESP_LOGI("modbus", "${device_id}: slave address set from NVS: %d", addr);
-          }
+      - if:
+          condition:
+            lambda: "return id(${device_id}_auto_mode);"
+          then:
+            - lambda: |-
+                auto cmd = esphome::modbus_controller::ModbusCommandItem::create_write_single_command(
+                  id(${device_id}_modbus), 0x0003, (uint16_t) 0xFFFF);
+                id(${device_id}_modbus)->queue_command(cmd);
 
 modbus_controller:
   - id: ${device_id}_modbus
@@ -200,10 +255,17 @@ number:
           ESP_LOGI("modbus", "${device_id}: address changed to %d (NVS + device 0x0002)", addr);
 
   # 0x0003 — Serial forced fan speed % (read/write, 0–100; write 0xFFFF to release)
+  #
+  # Kept INTERNAL so the user-facing entity is the `${name} Speed` template
+  # number below (which honours the auto/manual flag). External scripts that
+  # need to drive the fan directly (e.g. mast-rack lambdas) can still use:
+  #   id(${device_id}_speed_percentage).make_call().set_value(N).perform();
+  # which writes raw % to 0x0003 exactly as before.
   - platform: modbus_controller
     modbus_controller_id: ${device_id}_modbus
-    name: "${name} All Fans Speed Percentage"
+    name: "${name} Raw Speed Percentage"
     id: ${device_id}_speed_percentage
+    internal: true
     register_type: holding
     address: 0x0003
     value_type: U_WORD
@@ -211,6 +273,37 @@ number:
     max_value: 100
     step: 1
     unit_of_measurement: "%"
+
+  # User-facing speed slider. Semantics per design:
+  #   * In auto mode -> writing the slider re-asserts auto (0xFFFF). The
+  #     slider value itself is irrelevant; display always shows the actual
+  #     PWM duty reported by the device.
+  #   * In manual mode -> the input value is written verbatim to 0x0003.
+  - platform: template
+    name: "${name} Speed"
+    id: ${device_id}_speed_ui
+    icon: "mdi:fan"
+    min_value: 0
+    max_value: 100
+    step: 1
+    mode: slider
+    unit_of_measurement: "%"
+    optimistic: false
+    lambda: |-
+      const float v = id(${device_id}_speed_percentage).state;
+      if (isnan(v)) return 0.0f;
+      // Clamp display to 0..100; device may return 0xFFFF mirror on quirky
+      // firmware revisions — treat that as "unknown 0".
+      if (v >= 65535.0f - 0.5f) return 0.0f;
+      return v;
+    set_action:
+      - lambda: |-
+          uint16_t val = id(${device_id}_auto_mode)
+                          ? (uint16_t) 0xFFFF
+                          : (uint16_t) x;
+          auto cmd = esphome::modbus_controller::ModbusCommandItem::create_write_single_command(
+            id(${device_id}_modbus), 0x0003, val);
+          id(${device_id}_modbus)->queue_command(cmd);
 
 
   # 0x0005 — Governor mode (internal, used by select)
@@ -392,18 +485,39 @@ select:
           call.set_value(val);
           call.perform();
 
+# ── Switches ──────────────────────────────────────────────────────────────────
+
+switch:
+  # Auto/Manual mode toggle. ON  = JPF4816 temperature-PID active (0xFFFF).
+  #                         OFF = manual mode, fan forced to 10% (0x000A).
+  # State is mirrored from the NVS-backed global, so the UI stays consistent
+  # across reboots and across multiple HA sessions.
+  - platform: template
+    name: "${name} Auto Mode"
+    id: ${device_id}_auto_switch
+    icon: "mdi:fan-auto"
+    optimistic: false
+    lambda: "return id(${device_id}_auto_mode);"
+    turn_on_action:
+      - globals.set:
+          id: ${device_id}_auto_mode
+          value: "true"
+      - lambda: |-
+          auto cmd = esphome::modbus_controller::ModbusCommandItem::create_write_single_command(
+            id(${device_id}_modbus), 0x0003, (uint16_t) 0xFFFF);
+          id(${device_id}_modbus)->queue_command(cmd);
+    turn_off_action:
+      - globals.set:
+          id: ${device_id}_auto_mode
+          value: "false"
+      - lambda: |-
+          auto cmd = esphome::modbus_controller::ModbusCommandItem::create_write_single_command(
+            id(${device_id}_modbus), 0x0003, (uint16_t) 0x000A);
+          id(${device_id}_modbus)->queue_command(cmd);
+
 # ── Buttons (actions) ─────────────────────────────────────────────────────────
 
 button:
-  # Write 0xFFFF to 0x0003 — release serial forced control, return to temp control
-  - platform: template
-    name: "${name} Exit Serial Control"
-    on_press:
-      - lambda: |-
-          auto cmd = esphome::modbus_controller::ModbusCommandItem::create_write_single_command(
-            id(${device_id}_modbus), 0x0003, 0xFFFF);
-          id(${device_id}_modbus)->queue_command(cmd);
-
   # Write 0x00AA to 0x0020 — reset/restart the controller (write-only register)
   - platform: template
     name: "${name} Restart Device"
