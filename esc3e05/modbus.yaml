@@ -1,0 +1,14 @@
+defaults:
+  serial_port_speed: "9600"
+
+# PCB silkscreen for RX/TX is swapped/wrong; GPIO20=RX / GPIO21=TX is the verified-correct mapping
+uart:
+  id: uart_modbus_client
+  tx_pin: 21
+  rx_pin: 20
+  baud_rate: ${serial_port_speed}
+
+modbus:
+  flow_control_pin: 9
+  send_wait_time: 200ms
+  id: modbus_master

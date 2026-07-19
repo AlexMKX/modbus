@@ -1,0 +1,24 @@
+output:
+  - platform: gpio
+    id: relay_1
+    pin:
+      number: GPIO5
+      inverted: false
+
+  - platform: gpio
+    id: relay_2
+    pin:
+      number: GPIO6
+      inverted: false
+
+  - platform: gpio
+    id: relay_3
+    pin:
+      number: GPIO7
+      inverted: false
+
+  - platform: gpio
+    id: relay_4
+    pin:
+      number: GPIO10
+      inverted: false
