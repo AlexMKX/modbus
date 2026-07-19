@@ -16,5 +16,12 @@ uart:
   flow_control_pin: 9
 
 modbus:
-  send_wait_time: 200ms
+  # WS30x (addr=2) needs noticeably longer than the AO (addr=1) to begin
+  # responding to its 8-register batch read (observed time-to-first-byte
+  # up to ~640ms in the field), so 200ms was too tight and every WS30x poll
+  # timed out before its response even started, leaving late bytes to be
+  # discarded once they did arrive. Widened to comfortably cover the
+  # slowest observed WS30x response with margin; AO already responds well
+  # within this window so it is unaffected.
+  send_wait_time: 1000ms
   id: modbus_master
