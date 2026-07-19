@@ -26,6 +26,23 @@ modbus_controller:
     command_throttle: ${command_throttle}
     offline_skip_updates: ${offline_skip_updates}
     max_cmd_retries: ${max_cmd_retries}
+  # Second controller instance for the same physical device/address, covering the
+  # pressure+illuminance registers (0x0004-0x0007). modbus_controller auto-batches
+  # all contiguous registers owned by a single controller id into one read command;
+  # the combined 8-register (0x0000-0x0007) read on ${device_id}_modbus produced a
+  # 21-byte response that was observed, in the field, to reliably lose its tail end
+  # (master gave up 1 byte short on effectively every poll), while every smaller
+  # read on this same bus/baud succeeded. Splitting into two 4-register/13-byte
+  # reads keeps each command well under whatever margin this hardware/timing setup
+  # can reliably sustain, matching the AO device's small reads which never fail.
+  - id: ${device_id}_modbus2
+    address: ${slave_id}
+    modbus_id: ${modbus_master}
+    setup_priority: -10
+    update_interval: ${update_interval}
+    command_throttle: ${command_throttle}
+    offline_skip_updates: ${offline_skip_updates}
+    max_cmd_retries: ${max_cmd_retries}
 
 sensor:
   - platform: modbus_controller
@@ -78,7 +95,7 @@ sensor:
     accuracy_decimals: 0
 
   - platform: modbus_controller
-    modbus_controller_id: ${device_id}_modbus
+    modbus_controller_id: ${device_id}_modbus2
     id: ${device_id}_pressure
     name: "${name} Pressure"
     register_type: holding
@@ -91,7 +108,7 @@ sensor:
     accuracy_decimals: 0
 
   - platform: modbus_controller
-    modbus_controller_id: ${device_id}_modbus
+    modbus_controller_id: ${device_id}_modbus2
     id: ${device_id}_illuminance
     name: "${name} Illuminance"
     register_type: holding
