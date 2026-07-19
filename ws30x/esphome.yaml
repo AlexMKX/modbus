@@ -1,3 +1,4 @@
+# wiring: Red: VCC,  Black: GND,  Yellow/Green: A, Blue: B
 defaults:
   modbus_master: modbus_master
   device_id: ws30x
