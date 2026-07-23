@@ -1,0 +1,27 @@
+defaults:
+  serial_port_speed: "9600"
+
+# RS485 pins per official eletechsup ESC3B04 schematic/manual (RXD=GPIO20, TXD=GPIO21, DE/RE=GPIO9). Docs are internally consistent; the eletechsup family has a silkscreen-error history, so verify with a loopback/poll on first boot.
+uart:
+  id: uart_modbus_client
+  tx_pin: 21
+  rx_pin: 20
+  baud_rate: ${serial_port_speed}
+  # Hardware RS485 half-duplex flow control (ESP32-only feature). Must live on the
+  # uart: component, not modbus:, so the DE/RE toggle is timed by the UART hardware
+  # against actual byte transmission instead of a fixed-delay software GPIO toggle.
+  # With it on modbus:, responses were being clipped to 1-9 garbled bytes on every
+  # poll (both slave addresses), consistent with the driver switching back to RX
+  # too early/late relative to the real TX completion.
+  flow_control_pin: 9
+
+modbus:
+  # WS30x (addr=2) needs noticeably longer than the AO (addr=1) to begin
+  # responding to its 8-register batch read (observed time-to-first-byte
+  # up to ~640ms in the field), so 200ms was too tight and every WS30x poll
+  # timed out before its response even started, leaving late bytes to be
+  # discarded once they did arrive. Widened to comfortably cover the
+  # slowest observed WS30x response with margin; AO already responds well
+  # within this window so it is unaffected.
+  send_wait_time: 1000ms
+  id: modbus_master
