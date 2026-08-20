@@ -1,4 +1,21 @@
 # wiring: Red: VCC,  Black: GND,  Yellow/Green: A, Blue: B
+
+esphome:
+  on_boot:
+    # Force the WS30x's autonomous broadcast off on every boot. This device
+    # spontaneously transmits unsolicited Modbus frames on its own timer
+    # unless this register is 0 - confirmed experimentally 2026-08-19/20:
+    # register value 0 disables the broadcast entirely (internal sampling
+    # and normal polling continue unaffected); any value >= ~5 sets the
+    # broadcast interval to roughly that many seconds. Written on every
+    # boot, not just once, so a factory-reset or swapped unit is always
+    # brought back to the intended default regardless of prior state.
+    priority: -100
+    then:
+      - number.set:
+          id: ${device_id}_report_period_set
+          value: 0
+
 defaults:
   modbus_master: modbus_master
   device_id: ws30x
