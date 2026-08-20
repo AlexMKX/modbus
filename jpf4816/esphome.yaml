@@ -2,7 +2,6 @@ defaults:
     modbus_master: modbus_master
     name: ${device_id}
     update_interval: 30s
-    command_throttle: 100ms
     rpm_filter_window: 3
     # Initial value of the per-device auto-mode flag (NVS-backed, only used
     # on first boot of a fresh device — subsequent boots restore from NVS).
@@ -113,7 +112,6 @@ modbus_controller:
     modbus_id: ${modbus_master}
     setup_priority: -10
     update_interval: ${update_interval}
-    command_throttle: ${command_throttle}
     offline_skip_updates: 5
     max_cmd_retries: 2
 

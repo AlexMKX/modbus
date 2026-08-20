@@ -2,7 +2,6 @@ defaults:
     modbus_master: modbus_master
     name: ${device_id}
     update_interval: 60s
-    command_throttle: 200ms
 
 packages:
   online_sensor: !include
@@ -25,7 +24,6 @@ modbus_controller:
     modbus_id: ${modbus_master}
     setup_priority: -10
     update_interval: ${update_interval}
-    command_throttle: ${command_throttle}
     offline_skip_updates: 5
     max_cmd_retries: 2
 

@@ -24,4 +24,5 @@ modbus:
   # slowest observed WS30x response with margin; AO already responds well
   # within this window so it is unaffected.
   send_wait_time: 1000ms
+  turnaround_time: 200ms
   id: modbus_master
