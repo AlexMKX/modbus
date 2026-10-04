@@ -103,7 +103,7 @@ number:
     min_value: 0
     max_value: 4095
     step: 1
-    force_new_range: true
+    reuse_previous_range: false
 
   - platform: modbus_controller
     modbus_controller_id: ${device_id}_modbus
@@ -115,7 +115,7 @@ number:
     min_value: 0
     max_value: 4095
     step: 1
-    force_new_range: true
+    reuse_previous_range: false
 
   - platform: modbus_controller
     modbus_controller_id: ${device_id}_modbus
@@ -127,7 +127,7 @@ number:
     min_value: 0
     max_value: 4095
     step: 1
-    force_new_range: true
+    reuse_previous_range: false
 
   - platform: modbus_controller
     modbus_controller_id: ${device_id}_modbus
@@ -139,7 +139,7 @@ number:
     min_value: 0
     max_value: 4095
     step: 1
-    force_new_range: true
+    reuse_previous_range: false
 
   - platform: modbus_controller
     modbus_controller_id: ${device_id}_modbus
@@ -193,20 +193,9 @@ button:
     entity_category: config
     on_press:
       then:
-        - lambda: |-
-            // Send raw Modbus write to broadcast address 0x00
-            // Function 0x06, Register 0x07D0, Value 0x0003
-            std::vector<uint8_t> cmd = {0x00, 0x06, 0x07, 0xD0, 0x00, 0x03};
-            // Calculate CRC
-            uint16_t crc = 0xFFFF;
-            for (auto byte : cmd) {
-              crc ^= byte;
-              for (int i = 0; i < 8; i++) {
-                if (crc & 0x0001) crc = (crc >> 1) ^ 0xA001;
-                else crc >>= 1;
-              }
-            }
-            cmd.push_back(crc & 0xFF);
-            cmd.push_back((crc >> 8) & 0xFF);
-            id(${modbus_master}).send_raw(cmd);
-            ESP_LOGI("AO", "Sent broadcast address change to 3");
+        - modbus_client.write_single_register:
+            modbus_id: ${modbus_master}
+            address: 0            # broadcast; fire-and-forget, no reply expected (function 0x06 is broadcastable)
+            start_address: 0x07D0
+            value: 3
+        - logger.log: "Sent broadcast address change to 3"

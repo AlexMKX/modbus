@@ -90,7 +90,7 @@ sensor:
     register_type: holding
     value_type: S_WORD
     address: 0x0004
-    force_new_range: true
+    reuse_previous_range: false
     device_class: distance
     state_class: measurement
     icon: mdi:car-coolant-level

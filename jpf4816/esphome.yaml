@@ -67,13 +67,12 @@ esphome:
     - priority: -200
       then:
         - delay: 10s
+        - modbus_client.write_single_register:
+            modbus_id: ${modbus_master}
+            address: ${slave_id}
+            start_address: 0x0003
+            value: !lambda "return id(${device_id}_auto_mode) ? 0xFFFF : 0x000A;"
         - lambda: |-
-            uint16_t val = id(${device_id}_auto_mode)
-                            ? (uint16_t) 0xFFFF
-                            : (uint16_t) 0x000A;
-            auto cmd = esphome::modbus_controller::ModbusCommandItem::create_write_single_command(
-              id(${device_id}_modbus), 0x0003, val);
-            id(${device_id}_modbus)->queue_command(cmd);
             ESP_LOGI("modbus", "${device_id}: boot mode re-assert: %s",
                      id(${device_id}_auto_mode) ? "AUTO (0xFFFF)" : "MANUAL (10%)");
 
@@ -87,10 +86,11 @@ interval:
           condition:
             lambda: "return id(${device_id}_auto_mode);"
           then:
-            - lambda: |-
-                auto cmd = esphome::modbus_controller::ModbusCommandItem::create_write_single_command(
-                  id(${device_id}_modbus), 0x0003, (uint16_t) 0xFFFF);
-                id(${device_id}_modbus)->queue_command(cmd);
+            - modbus_client.write_single_register:
+                modbus_id: ${modbus_master}
+                address: ${slave_id}
+                start_address: 0x0003
+                value: 0xFFFF
 
 modbus_controller:
   - id: ${device_id}_modbus
@@ -273,13 +273,11 @@ number:
       if (v >= 65535.0f - 0.5f) return 0.0f;
       return v;
     set_action:
-      - lambda: |-
-          uint16_t val = id(${device_id}_auto_mode)
-                          ? (uint16_t) 0xFFFF
-                          : (uint16_t) x;
-          auto cmd = esphome::modbus_controller::ModbusCommandItem::create_write_single_command(
-            id(${device_id}_modbus), 0x0003, val);
-          id(${device_id}_modbus)->queue_command(cmd);
+      - modbus_client.write_single_register:
+          modbus_id: ${modbus_master}
+          address: ${slave_id}
+          start_address: 0x0003
+          value: !lambda "return id(${device_id}_auto_mode) ? 0xFFFF : (uint16_t) x;"
 
 
   # 0x0005 — Governor mode (internal, used by select)
@@ -478,18 +476,20 @@ switch:
       - globals.set:
           id: ${device_id}_auto_mode
           value: "true"
-      - lambda: |-
-          auto cmd = esphome::modbus_controller::ModbusCommandItem::create_write_single_command(
-            id(${device_id}_modbus), 0x0003, (uint16_t) 0xFFFF);
-          id(${device_id}_modbus)->queue_command(cmd);
+      - modbus_client.write_single_register:
+          modbus_id: ${modbus_master}
+          address: ${slave_id}
+          start_address: 0x0003
+          value: 0xFFFF
     turn_off_action:
       - globals.set:
           id: ${device_id}_auto_mode
           value: "false"
-      - lambda: |-
-          auto cmd = esphome::modbus_controller::ModbusCommandItem::create_write_single_command(
-            id(${device_id}_modbus), 0x0003, (uint16_t) 0x000A);
-          id(${device_id}_modbus)->queue_command(cmd);
+      - modbus_client.write_single_register:
+          modbus_id: ${modbus_master}
+          address: ${slave_id}
+          start_address: 0x0003
+          value: 0x000A
 
 # ── Buttons (actions) ─────────────────────────────────────────────────────────
 
@@ -498,7 +498,8 @@ button:
   - platform: template
     name: "${name} Restart Device"
     on_press:
-      - lambda: |-
-          auto cmd = esphome::modbus_controller::ModbusCommandItem::create_write_single_command(
-            id(${device_id}_modbus), 0x0020, 0x00AA);
-          id(${device_id}_modbus)->queue_command(cmd);
+      - modbus_client.write_single_register:
+          modbus_id: ${modbus_master}
+          address: ${slave_id}
+          start_address: 0x0020
+          value: 0x00AA

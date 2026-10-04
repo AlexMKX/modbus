@@ -32,12 +32,9 @@ sensor:
     unit_of_measurement: "°C"
     accuracy_decimals: 1
     filters:
+      # 0x8000 = sensor "no data" marker; drop the sample so HA keeps the last good value
+      - lambda: "return x == -32768.0f ? optional<float>{} : optional<float>(x);"
       - multiply: 0.1
-      - quantile:
-          window_size: 7
-          send_every: 1
-          send_first_at: 1
-          quantile: 0.99
   - platform: modbus_controller
     modbus_controller_id: ${device_id}
     name: "${name} Humidity"
@@ -48,4 +45,6 @@ sensor:
     unit_of_measurement: "%"
     accuracy_decimals: 1
     filters:
+      # 0x8000 = sensor "no data" marker; drop the sample so HA keeps the last good value
+      - lambda: "return x == -32768.0f ? optional<float>{} : optional<float>(x);"
       - multiply: 0.1
