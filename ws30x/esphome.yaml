@@ -99,7 +99,6 @@ sensor:
     register_type: holding
     address: 0x0004
     value_type: U_DWORD
-    register_count: 2
     device_class: pressure
     unit_of_measurement: "Pa"
     state_class: measurement
@@ -112,7 +111,6 @@ sensor:
     register_type: holding
     address: 0x0006
     value_type: U_DWORD
-    register_count: 2
     device_class: illuminance
     unit_of_measurement: "lx"
     state_class: measurement
