@@ -48,11 +48,6 @@ packages:
 # 0x0020 | Reset/restart (write 0x00AA)         | W
 
 globals:
-  - id: ${device_id}_slave_id
-    type: int
-    restore_value: true
-    initial_value: "(${slave_id})"
-
   # Auto/Manual mode flag (single source of truth, persisted in NVS).
   # The JPF4816 does NOT expose its mode in any register: reading 0x0003
   # always returns the current PWM % regardless of mode (manual §8.2/§9.6),
@@ -65,16 +60,7 @@ globals:
 
 esphome:
   on_boot:
-    # 1. Re-apply slave address from NVS (early — before first transaction).
-    - priority: -5
-      then:
-        - lambda: |-
-            int addr = id(${device_id}_slave_id);
-            if (addr > 0 && addr <= 254) {
-              id(${device_id}_modbus).set_address(addr);
-              ESP_LOGI("modbus", "${device_id}: slave address set from NVS: %d", addr);
-            }
-    # 2. Re-assert auto/manual mode. JPF4816 itself reverts to temperature
+    # Re-assert auto/manual mode. JPF4816 itself reverts to temperature
     #    control on its own power-cycle, so without this our NVS flag would
     #    silently disagree with reality after a full power-down. Run late,
     #    after modbus/uart/wifi are fully up.
@@ -228,29 +214,21 @@ sensor:
 # ── Numbers (read/write registers) ────────────────────────────────────────────
 
 number:
-  # Modbus address — writes to NVS (ESP32 side) AND register 0x0002 (JPF4816 device)
-  - platform: template
+  # 0x0002 — Modbus address (read/write). Writing here changes the address
+  # stored in the JPF4816 itself; the ESP keeps polling the old address until
+  # `slave_id` in the device YAML is updated and the firmware is rebuilt
+  # (ESPHome 2026.9: controller address is fixed at build time).
+  - platform: modbus_controller
+    modbus_controller_id: ${device_id}_modbus
     name: "${name} Modbus Address"
-    id: ${device_id}_slave_addr_ui
+    register_type: holding
+    address: 0x0002
+    value_type: U_WORD
     min_value: 1
     max_value: 254
     step: 1
     mode: box
     entity_category: config
-    lambda: "return id(${device_id}_slave_id);"
-    set_action:
-      - globals.set:
-          id: ${device_id}_slave_id
-          value: !lambda "return (int)x;"
-      - lambda: |-
-          int addr = (int)x;
-          // Write new address to JPF4816 register 0x0002 BEFORE changing ESP32 target
-          auto cmd = esphome::modbus_controller::ModbusCommandItem::create_write_single_command(
-            id(${device_id}_modbus), 0x0002, addr);
-          id(${device_id}_modbus)->queue_command(cmd);
-          // Update ESP32 modbus controller target address
-          id(${device_id}_modbus)->set_address(addr);
-          ESP_LOGI("modbus", "${device_id}: address changed to %d (NVS + device 0x0002)", addr);
 
   # 0x0003 — Serial forced fan speed % (read/write, 0–100; write 0xFFFF to release)
   #

@@ -154,10 +154,10 @@ number:
     mode: box
     entity_category: config
     use_write_multiple: false
-    on_value:
-      then:
-        - lambda: |-
-            id(${device_id}_modbus).set_address((int)x);
+    # Writes the new address into the device's own register 0x07D0 only; the
+    # ESP keeps polling the old address until `slave_id` in the device YAML is
+    # updated and the firmware is rebuilt (ESPHome 2026.9: controller address
+    # is fixed at build time).
 
 select:
   - platform: modbus_controller
