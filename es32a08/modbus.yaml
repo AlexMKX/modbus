@@ -6,8 +6,13 @@ uart:
   tx_pin: 1
   rx_pin: 3
   baud_rate: ${serial_port_speed}
+  # Hardware RS485 half-duplex DE/RE toggle (ESP32-only), timed by the UART
+  # against real byte transmission; same approach as esc3b04/modbus.yaml.
+  flow_control_pin: 22
 
 modbus:
-  flow_control_pin: 22
   send_wait_time: 200ms
+  # Pause before each frame on the bus. ESPHome >= 2026.x defaults it to
+  # 600ms when unset; set explicitly (replaces old command_throttle).
+  turnaround_time: 200ms
   id: modbus_master

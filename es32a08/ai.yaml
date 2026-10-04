@@ -76,36 +76,59 @@ sensor:
       mode:
         input: true  
 
-  - &i_4_20_base
-    platform: template
+  # 4-20 mA -> 0-100 %, NAN below 4 mA (open loop)
+  - platform: template
     id: i2_4_20
-    internal: true          
+    internal: true
     name: "i2 4-20"
     unit_of_measurement: "%"
     update_interval: 5s
     lambda: |-
       return id(i2).state>=4?id(i2).state:NAN;
     filters:
-      - calibrate_linear: 
+      - calibrate_linear:
           datapoints:
             - 4 -> 0.0
             - 20 -> 100
 
-  - << : *i_4_20_base
+  - platform: template
     id: i1_4_20
+    internal: true
     name: "i1 4-20"
+    unit_of_measurement: "%"
+    update_interval: 5s
     lambda: |-
       return id(i1).state>=4?id(i1).state:NAN;
+    filters:
+      - calibrate_linear:
+          datapoints:
+            - 4 -> 0.0
+            - 20 -> 100
 
-  - << : *i_4_20_base
+  - platform: template
     id: i3_4_20
-    internal: true      
+    internal: true
     name: "i3 4-20"
+    unit_of_measurement: "%"
+    update_interval: 5s
     lambda: |-
-      return id(i3).state>=4?id(i3).state:NAN;    
+      return id(i3).state>=4?id(i3).state:NAN;
+    filters:
+      - calibrate_linear:
+          datapoints:
+            - 4 -> 0.0
+            - 20 -> 100
 
-  - << : *i_4_20_base
+  - platform: template
     id: i4_4_20
+    internal: true
     name: "i4 4-20"
+    unit_of_measurement: "%"
+    update_interval: 5s
     lambda: |-
-      return id(i4).state>=4?id(i4).state:NAN;    
+      return id(i4).state>=4?id(i4).state:NAN;
+    filters:
+      - calibrate_linear:
+          datapoints:
+            - 4 -> 0.0
+            - 20 -> 100

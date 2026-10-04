@@ -1,6 +1,9 @@
 sn74hc165:
   - id: 'input_hub'
-    data_pin: GPIO5
+    data_pin:
+      number: GPIO5
+      # hard-wired on the ES32A08 board, cannot be moved
+      ignore_strapping_warning: true
     clock_pin: GPIO17
     load_pin: GPIO16
 
