@@ -471,6 +471,9 @@ switch:
     id: ${device_id}_auto_switch
     icon: "mdi:fan-auto"
     optimistic: false
+    # State lives in the NVS global. Without DISABLED the default ALWAYS_OFF
+    # makes setup() call turn_off() on every boot, which overwrites the global.
+    restore_mode: DISABLED
     lambda: "return id(${device_id}_auto_mode);"
     turn_on_action:
       - globals.set:
